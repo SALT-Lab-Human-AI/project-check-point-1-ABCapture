@@ -2,4 +2,6 @@
 
 
 Voice-to-text incident logger with auto-summary
+
+
  AI document/file organizer that tags & summarizes notes
