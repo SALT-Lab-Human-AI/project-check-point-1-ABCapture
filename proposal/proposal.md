@@ -4,20 +4,16 @@
 Teachers who support autistic students need a fast, accurate way to capture what happened during conflicts, but in real classrooms they can’t stop to type long notes, so details often get lost. When records are messy or missing, it’s harder to spot patterns, adjust supports, and share clear updates with parents and specialists. Our project aims to fix this by making incident logging and organization quick and simple with voice-to-text, auto-summaries, and smart tags - turning a painful admin chore into a simple habit that actually helps students. In the long run, this can improve communication, reduce teacher stress, and create a more supportive environment for students.
 
 ## Prior Systems & Gaps
-### Prior Systems
 - AI-powered behavior tracking tools and incident logging apps exist that attempt to document observations through manual entry or some voice recognition features. However, many require significant manual input, lacking real-time voice-to-text integration combined with meaningful summaries and tagging (Li et al., 2024).
 - Specialized speech-to-text and dictation software are widely used in education, but these often are generic and not tailored to the nuanced documentation needs of autistic-related behaviors in busy classrooms (Nebraska Autism Spectrum Disorders Network, 2018).
 - Behavior analytic tools commonly use ABC (Antecedent-Behavior-Consequence) data collection frameworks but remain manual and fragmented, rarely integrated into a seamless AI-powered workflow for teachers (Nebraska Autism Spectrum Disorders Network, 2018).
 - Some AI interventions focus on improving engagement via interactive games, virtual reality, or robots, but they do not address efficient, accurate record-keeping or teacher workflows (Li et al., 2024).
 
-### Gaps
--  
--
 
 ## Your proposed approach and why it will improve on prior art
 Our initial concept is to build a simple AI-powered tool with two main features: a Voice-to-Text Incident Logger with Auto-Summary and an AI Document/File Organizer that Tags & Summarizes Notes. Teachers can press a button, describe what happened, and instantly get both a transcript and a short summary of the conflict. The system will then store the record, add tags such as student name, type of conflict, and date, and keep everything organized in one place for easy searching and reviewing. This creates clearer communication with specialists and parents, makes support plans more effective, and turns documentation into a quick, reliable process instead of a stressful chore.
 
-why it improves on prior art...
+- why it improves on prior art...
 
 ## Plan for Checkpoint 2 validation via prompting (see CP2)
 
