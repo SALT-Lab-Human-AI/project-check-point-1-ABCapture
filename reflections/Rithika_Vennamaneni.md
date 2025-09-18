@@ -21,10 +21,10 @@ This paper suggests our emotion journaling tool could also include structured pr
 
 ## A Review of Artificial Intelligence Interventions for Students with Autism Spectrum Disorder
 **Citation and Link**  
-Kotsi, S., Handrinou, S., Iatraki, G., & Soulis, S.-G. (2025). A Review of Artificial Intelligence Interventions for Students with Autism Spectrum Disorder. *Disabilities, 5*(1), 7. https://doi.org/10.3390/disabilities5010007
+Kotsi, S., Handrinou, S., Iatraki, G., & Soulis, S.-G. (2025). A Review of Artificial Intelligence Interventions for Students with Autism Spectrum Disorder. *Disabilities, 5*(1), 7. https://doi.org/10.3390/disabilities5010007  
 
 ### Summary  
-This review analyzed 13 empirical studies (2018–2024) that tested AI interventions in autism education, including robots, smart glasses, AR/VR tools and game-based platforms. Most focused on improving social interaction, emotional recognition and communication skills, with consistent positive results such as better eye contact, motivation and emotion labeling. However, most studies were small-scale, often pilot projects with limited diversity and short timelines. The review concludes that AI can enhance learning and engagement for autistic students but highlights gaps in long-term validation and standardized practices.  
+This review analyzed 13 empirical studies (2018–2024) that tested AI interventions in autism education, including robots, smart glasses, AR/VR tools and game-based platforms. Most focused on improving social interaction, emotional recognition and communication skills, with consistent positive results such as better eye contact, motivation, and emotion labeling. However, most studies were small-scale, often pilot projects with limited diversity and short timelines. The review concludes that AI can enhance learning and engagement for autistic students but highlights gaps in long-term validation and standardized practices.  
 
 ### Insights Learned  
 1. Game-based interventions and immediate feedback were especially effective, aligning with autistic students’ need for structure and repetition.  
@@ -36,4 +36,4 @@ This review analyzed 13 empirical studies (2018–2024) that tested AI intervent
 2. There’s little long-term data showing whether improvements last beyond the intervention period.  
 
 ### Idea for Our Project  
-This review reinforced that our **scenario-based roleplay bot** could borrow from the game-based approach, using structured repetition and immediate feedback. By simulating conflicts and social situations, it can help both students and teachers practice responses in a safe, engaging way.  
+This review inspired us to make sure our incident logger and emotion journaling tool also include immediate, structured feedback loops and clear summaries. Just like game-based interventions improve engagement, our logger could highlight repeated triggers or successful interventions after each entry, while the journaling tool could give weekly insights that teachers and parents can use together. This makes our tools not just record-keepers, but active supports for learning and collaboration.  
