@@ -25,15 +25,21 @@ When focusing on the incident logging portion of our project, it will be importa
 
 ## title Reflection
 ### Citation and Link
-
+Li, G., Zarei, M. A., Alibakhshi, G., & Labbafi, A. (2024). Teachers and educators’ experiences and perceptions of artificial intelligence-powered interventions for autism groups. BMC Psychology, 12(199). [https://doi.org/10.1186/s40359-024-01664-2](https://doi.org/10.1186/s40359-024-01664-2)
 
 ### Summary
-
+This qualitative study investigates the perceptions and experiences of 20 educators and parents regarding AI-powered interventions for children with autism. Using semi-structured interviews and focus groups, the research identified perceived benefits such as increased engagement, personalized learning, and real-time feedback. Challenges included limited access to technology, the need for educator training, potential bias in AI systems, ethical concerns, and the risk of overreliance on technology replacing human interaction. The study emphasizes the importance of cultural and linguistic appropriateness, avoiding bias, and collaborative design involving families and communities to enhance intervention effectiveness and inclusivity.
 
 ### Insights Learned
-
+- Individualized approaches are crucial since each child with autism presents unique strengths and challenges, making one-size-fits-all solutions ineffective.
+- Effective implementation depends heavily on educator training, technical support, and culturally responsive design to maximize benefits across diverse populations.
+- Real-time feedback benefits both children and educators by reinforcing positive behaviors and enabling tailored instructional adjustments.
+- Collaborative involvement of families and communities enhances cultural sensitivity, relevance, and overall impact of AI interventions.
+- Regular audits and ongoing research are necessary to address biases, ensure ethical standards, and evaluate long-term efficacy and accessibility.
 
 ### Limitations/Risks
-
+- Findings from this study may not generalize widely due to a limited, demographically specific sample (Iranian educators and parents).
+- Overreliance on AI technology risks reducing critical human social interactions essential for emotional and social development.
 
 ### How This Inspires Our Project
+This study highlights the importance of embedding personalized, culturally sensitive, and ethically responsible AI frameworks in educational interventions for children with autism. For our project, it underscores the need to prioritize real-time feedback, user training, and inclusive design when building AI-powered tools like incident loggers and document organizers. We will want to ensure our solution is both effective in supporting autistic learners and practical for educators.
