@@ -1,3 +1,5 @@
+# Autism Support AI
+
 ### Problem statement and why it matters
 Teachers who support autistic students need a fast, accurate way to capture what happened during conflicts, but in real classrooms they can’t stop to type long notes, so details often get lost. When records are messy or missing, it’s harder to spot patterns, adjust supports, and share clear updates with parents and specialists. Our project aims to fix this by making incident logging and organization quick and simple with voice-to-text, auto-summaries, and smart tags - turning a painful admin chore into a simple habit that actually helps students. In the long run, this can improve communication, reduce teacher stress, and create a more supportive environment for students.
 
