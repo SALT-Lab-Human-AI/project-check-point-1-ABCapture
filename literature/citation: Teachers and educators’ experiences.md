@@ -1,0 +1,1 @@
+Li, G., Zarei, M. A., Alibakhshi, G., & Labbafi, A. (2024). Teachers and educators’ experiences and perceptions of artificial intelligence-powered interventions for autism groups. BMC Psychology, 12(199). [https://doi.org/10.1186/s40359-024-01664-2](https://doi.org/10.1186/s40359-024-01664-2)
