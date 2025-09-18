@@ -32,10 +32,7 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 
 **Checkpoint 3: Working Implementation & Live Demo (12 pts)**
 
-* Build end-to-end working prototype with both main features:
-
-  * Voice-to-Text Incident Logger with Auto-Summary
-  * AI Document/File Organizer that Tags & Summarizes Notes
+* Build end-to-end working prototype with both main features: Voice-to-Text Incident Logger with Auto-Summary, AI Document/File Organizer that Tags & Summarizes Notes
 * Deploy live demo (or provide local run instructions)
 * Add source code, config files, architecture diagram, and basic tests
 * Address safety, privacy, and logging considerations
