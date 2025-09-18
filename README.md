@@ -15,7 +15,7 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 
 ### Milestones & roles
 
-**Checkpoint 1: GitHub Kickoff + Proposal & Literature (5 pts)**
+**Checkpoint 1: GitHub Kickoff + Proposal & Literature**
 
 * Set up GitHub repo with README, proposal, and folder structure
 * Collect at least 8 relevant papers and add reflections
@@ -23,7 +23,7 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 * Prepare short in-class presentation
 * *All team members contribute*
 
-**Checkpoint 2: Prompt-Based Validation & Concept Feedback (10 pts)**
+**Checkpoint 2: Prompt-Based Validation & Concept Feedback**
 
 * Design prompting study across 3+ tools (e.g., ChatGPT, Perplexity, NotebookLM)
 * Collect transcripts, outputs, and run gap analysis
@@ -32,7 +32,7 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 * Present prompting evidence, gaps, and refined concept
 * *All team members contribute*
 
-**Checkpoint 3: Working Implementation & Live Demo (12 pts)**
+**Checkpoint 3: Working Implementation & Live Demo**
 
 * Build end-to-end working prototype with both main features: Voice-to-Text Incident Logger with Auto-Summary, AI Document/File Organizer that Tags & Summarizes Notes
 * Deploy live demo (or provide local run instructions)
@@ -41,7 +41,7 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 * Live walk-through demo + technical explanation
 * *All team members contribute*
 
-**Checkpoint 4: Evaluation & Final Report (13 pts)**
+**Checkpoint 4: Evaluation & Final Report**
 
 * Run user study or experiments to evaluate tool usefulness and reliability
 * Collect both quantitative (e.g., task success, error rate, satisfaction) and qualitative feedback
