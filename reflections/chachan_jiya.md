@@ -31,15 +31,12 @@ This qualitative study examined the experiences of 13 educators in Ontario, Cana
 #### 3 Insights Learned
 
 1. Teachers often receive little to no training specific to autism, leaving them unprepared for behavioral challenges.
-
 2. Socio-structural barriers, such as limited funding for resources and assistants, heavily impact successful inclusion.
-
 3. Inclusion depends not just on the teacher but also on broader community support, including parents, peers, and other school staff.
 
 #### 2 Limitations/Risks
 
 1. The sample size is small (13 teachers in Ontario), so findings may not generalize to all regions or contexts.
-
 2. Many participants already had special education training, which may not reflect the experiences of general classroom teachers elsewhere.
 
 #### 1 Idea for Our Project
