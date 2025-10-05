@@ -1,4 +1,4 @@
-# [insert product name]: An AI-Powered Tool to Support Adults Working With Children With Autism
+# ABCapture: An AI-Powered Tool to Support Adults Working With Children With Autism
 #### By: Jiya Chachan, Sara Kiel, Manuela Rodriguez, Rithika Vennamaneni
 
 ### Problem statement and why it matters
