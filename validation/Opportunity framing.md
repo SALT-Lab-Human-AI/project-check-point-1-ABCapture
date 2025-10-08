@@ -1,5 +1,6 @@
-# Opportunity Framing – Notebook LM
+# Opportunity Framing
 
+## Notebook LM
 The findings from the NotebookLM validation study highlight several opportunities for ABCapture to address gaps that existing tools do not cover.  
 
 1. **Real-time voice input:** ABCapture should allow teachers to record incidents hands-free during class, enabling faster and more natural data capture.  
