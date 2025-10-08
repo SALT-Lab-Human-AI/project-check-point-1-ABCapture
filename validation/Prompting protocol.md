@@ -21,8 +21,8 @@
 
 
 ### User Prompts Tested
-| Scenario Type | Task Description | Tool Tested | Prompt Example | Expected Outcome | Typical, Edge, or Failure Case? |
-| -------- | -------- | -------- | -------- | -------- |
-| Incident logging | Log an incident using text or speech | Copilot Studio | “hello, i have an incident to report” | Agent guides the user through the incident logging process using pre-established methods for logging incidents with children with autism. | Typical |
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 | Row 2, Col 5 |
+| Scenario Type | Task Description    | Tool Tested      | Prompt Example                       | Expected Outcome                            | Typical, Edge, or Failure Case? |
+| ------------- | ------------------- | ---------------- | ------------------------------------ | ---------------------------  -------------- | ------------------------------- |
+| Incident logging | Log an incident using text or speech | Copilot Studio | "hello, i have an incident to report" | Agent guides the user through the incident logging process using pre-established methods for logging incidents with children with autism. | Typical                        |
+| ...           | ...                | ...              | ...                                  | ...                                                                                                     | ...                             |
 
