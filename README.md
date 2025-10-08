@@ -53,7 +53,34 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 * Package final artifacts (deployed link, cleaned data, prompt files, scripts, figures)
 * Present key findings, lessons, and demo highlights
 * *All team members contribute*
+---
 
-**Team Contributions**
-* 
-* 
+### Team Contributions
+
+**Checkpoint 1: GitHub Kickoff + Proposal & Literature**
+- **Jiya**: Set up the GitHub repository and created the **README** file.  
+- **All Members**: Reviewed and reflected on **2 literature papers each**, contributing to a collective understanding of existing tools and research.  
+- **Sara & Manuela**: Wrote the **project proposal**, including the problem statement, target users, and concept overview.  
+
+---
+
+**Checkpoint 2: Prompt-Based Validation & Concept Feedback**
+- **All Members**: Participated in the **Prompting Protocol**, with **each member testing one AI tool** (e.g. Notion AI, NotebookLM, Copilot Studio, etc.).  
+- **All Members**: Collaboratively contributed to the **Figma prototype** and the **DESIGN_SPEC.md** (user journeys, task flows, and key screens).  
+
+---
+**Checkpoint 3: Working Implementation & Live Demo (Planned)**
+- **Jiya**: Will implement the **Voice-to-Text Incident Logger**, integrating speech-to-text and auto-summary functionality. Will update setup and run instructions in the README.  
+- **Sara**: Will develop the **AI Document/File Organizer** with smart tagging logic, and create the **system architecture diagram** along with privacy & safety documentation.  
+- **Manuela**: Will focus on **UI/UX design** and front-end layout, conduct usability testing, and prepare the **demo walkthrough presentation**.  
+- **Rithika**: Will handle **back-end integration** between the logger and organizer modules, create **sample datasets** for the demo, and assist with final testing and debugging.  
+
+---
+
+**Checkpoint 4: Evaluation & Final Report (Planned)**
+- **Jiya**: Will lead the **user study design** and data analysis, including both quantitative (task success, satisfaction) and qualitative insights. Will draft the **Results** and **Discussion** sections.  
+- **Sara**: Will edit and compile the **Final Report** (3,500–4,500 words), write the **Related Work** and **Future Work** sections, and manage final formatting and submission.  
+- **Manuela**: Will synthesize qualitative feedback, design **charts and visuals** for the report, and help prepare the **final presentation**.  
+- **Rithika**: Will consolidate all **final deliverables** (code, cleaned data, scripts, and prompt files), document **Methodology** and **Risks & Limitations**, and ensure reproducibility.  
+
+---
