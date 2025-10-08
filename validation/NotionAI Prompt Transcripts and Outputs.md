@@ -128,7 +128,7 @@ He said the noise from the others was bothering him and pushed his worksheet off
 
 ## **2.3a Form Completion Prompt**
 
-##  Fill out the ABC form from the information provided from my audio. Use objective language. If any information required by the form is not mentioned by me in the recording please let me know so we can fill out correctly.
+Fill out the ABC form from the information provided from my audio. Use objective language. If any information required by the form is not mentioned by me in the recording please let me know so we can fill out correctly.
 
 ## **2.3b Agent Response**
 
