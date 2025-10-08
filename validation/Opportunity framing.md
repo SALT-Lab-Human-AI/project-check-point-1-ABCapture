@@ -1,4 +1,4 @@
-# 🚀 Opportunity Framing – ABCapture
+# Opportunity Framing – Notebook LM
 
 The findings from the NotebookLM validation study highlight several opportunities for ABCapture to address gaps that existing tools do not cover.  
 
