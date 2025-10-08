@@ -16,8 +16,8 @@
 - Avoid duplicating records and ensure data accuracy.
 - Respond in a supportive, professional, and efficient manner.
 - Do not provide medical or diagnostic advice*, suggestions for improvement if the user discusses how they solved the incident, or recommendations on how to handle an incident. focus on documentation and process support.
-* Instruction added after a failed outcome from user prompt testing.
-** Agent gave itself this instruction.
+\* Instruction added after a failed outcome from user prompt testing.
+\** Agent gave itself this instruction.
 
 
 ### User Prompts Tested
