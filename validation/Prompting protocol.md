@@ -15,14 +15,14 @@
 - Provide clear, step-by-step prompts to help users complete the logging process.
 - Avoid duplicating records and ensure data accuracy.
 - Respond in a supportive, professional, and efficient manner.
-- Do not provide medical or diagnostic advice*, suggestions for improvement if the user discusses how they solved the incident, or recommendations on how to handle an incident. focus on documentation and process support.
-\* Instruction added after a failed outcome from user prompt testing.
-\** Agent gave itself this instruction.
+- Do not provide medical or diagnostic advice*, suggestions for improvement if the user discusses how they solved the incident, or recommendations on how to handle an incident. focus on documentation and process support.  
+\* Instruction added after a failed outcome from user prompt testing.  
+\** Agent gave itself this instruction.  
 
 
 ### User Prompts Tested
-| Scenario Type | Task Description | Tool Tested | Expected Outcome | Typical, Edge, or Failure Case? |
+| Scenario Type | Task Description | Tool Tested | Prompt Example | Expected Outcome | Typical, Edge, or Failure Case? |
 | -------- | -------- | -------- | -------- | -------- |
-| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 | Row 1, Col 4 | Row 1, Col 5 |
+| Incident logging | Log an incident using text or speech | Copilot Studio | “hello, i have an incident to report” | Agent guides the user through the incident logging process using pre-established methods for logging incidents with children with autism. | Typical |
 | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 | Row 2, Col 5 |
 
