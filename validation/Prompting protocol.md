@@ -150,5 +150,84 @@ For each scenario, perform the following tasks using each AI tool:
 > “Hey, just a quick note to myself. I need to remember to print out the new spelling lists for next week and check if the laminator is working. Also, I want to talk to Mr. Chen about rearranging the seating chart before Monday. Oh, and I still need to send that email to Alex’s mom about the field trip permission slip. Anyway, tomorrow we’re supposed to have indoor recess again if it rains, so I should set up the sensory bin ahead of time. That’s it - just reminders so I don’t forget.”
 
 ---
+---
+---
 
+
+# Tool: NotebookLM  
+## Objective
+To evaluate whether NotebookLM can accurately summarize, tag, and organize teacher-generated incident notes about classroom situations involving autistic students. The goal was to understand NotebookLM’s strengths and limitations in supporting real-time documentation and behavioral analysis.
+
+---
+
+## Testing Setup
+**Input type:** Simulated teacher incident notes (written or transcribed).  
+**Evaluation focus:**  
+- Accuracy and completeness of summaries  
+- Tone and emotional sensitivity  
+- Ability to extract or infer ABC (Antecedent–Behavior–Consequence) elements  
+- Tagging/organization ability  
+- Handling of messy, incomplete, or ambiguous inputs  
+
+---
+
+## 🧩 Scenario 1 — Typical Case: Simple Classroom Conflict
+**Input:**  
+“During math group, Alex became upset when asked to put away the iPad. He started to cry and pushed his worksheet off the table. The teacher reminded him of the break schedule, and Alex calmed down within 3 minutes.”
+
+**Prompts:**  
+1. Summarize this incident in 3 sentences suitable for a parent update.  
+2. Identify the antecedent, behavior, and consequence from this note.  
+3. Tag this incident with student name, conflict type, and resolution.
+
+**Case Type:** ✅ Typical — straightforward, well-written input.
+
+---
+
+## ⚠️ Scenario 2 — Edge Case: Multiple Students, Overlapping Events
+**Input:**  
+“During group work, Jordan and Mia argued over a shared set of markers. Mia grabbed the markers and refused to share. Jordan yelled and pushed his chair back loudly, startling others. The aide intervened and separated them.”
+
+**Prompts:**  
+1. Summarize this note for the school behavior log in 2–3 sentences.  
+2. List each student’s behavior separately.  
+3. Generate tags by student name and behavior type.
+
+**Case Type:** ⚙️ Edge — tests contextual accuracy and multi-actor understanding.
+
+---
+
+## ❌ Scenario 3 — Failure Case: Messy / Incomplete Voice-to-Text Input
+**Input:**  
+“Uh so… during reading time, Sam got-like—mad again when someone took his spot. He kinda yelled and threw the book. I told him to take space, he calmed down but later was quiet rest of class.”
+
+**Prompts:**  
+1. Clean this transcript and summarize what happened.  
+2. Identify what triggered the behavior and how the teacher responded.  
+3. What important details seem to be missing that would help clarify the incident?
+
+**Case Type:** ❌ Failure — tests robustness and limitations.
+
+---
+
+## 📊 Multi-Source Analysis
+All three incidents were uploaded together to test synthesis and pattern recognition.
+
+**Prompts:**  
+1. List common triggers across all incidents.  
+2. Group incidents by type of conflict.
+
+---
+
+## 🧠 Evaluation Dimensions
+| Dimension | Guiding Question |
+|------------|------------------|
+| Accuracy | Are summaries correct and complete? |
+| Tone | Is the tone appropriate for teachers/parents? |
+| Structure | Does it identify ABC components correctly? |
+| Tagging | Are tags coherent and relevant? |
+| Usability | Was input easy to manage and responses quick? |
+| Handling ambiguity | Does it avoid making up details? |
+
+---
 
