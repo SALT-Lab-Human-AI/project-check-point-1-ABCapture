@@ -24,4 +24,5 @@
 | Scenario Type | Task Description    | Tool Tested      | Prompt Example                       | Expected Outcome                            | Typical, Edge, or Failure Case? |
 | ------------- | ------------------- | ---------------- | ------------------------------------ | ------------------------------------------- | ------------------------------- |
 | Incident logging | Log an incident using text or speech | Copilot Studio | "hello, i have an incident to report" | Agent guides the user through the incident logging process using pre-established methods for logging incidents with children with autism. | Typical                        |
+| File tagging | Tag an already uploaded incident report | Copilot Studio | "can you please tag incident #12 with "parent follow-up needed"" | Agent enters the Box folder with the incident files, finds the referenced incident, and tags it accordingly. | Typical                 |
 
