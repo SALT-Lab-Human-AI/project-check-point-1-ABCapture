@@ -29,4 +29,17 @@
 
 
 ### Scenarios Tested
-See (Scenarios section)[https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md] of (Prompting Protocol)[https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#prompting-protocol-for-evaluating-ai-speech-to-text-and-summarization-tools].
+See [Scenarios section](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md) of [Prompting Protocol](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#prompting-protocol-for-evaluating-ai-speech-to-text-and-summarization-tools).
+
+### Tool Evaluation
+See [Evaluation Dimensions](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#prompting-protocol-for-evaluating-ai-speech-to-text-and-summarization-tools) in [Prompting Protocol](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) for evaluation rubric.
+
+| Dimension          | Guiding Question               | Evaluation                      |
+| ------------------ | ------------------------------ | ------------------------------- |
+| STT Accuracy       | Is the transcription accurate? |             |
+| Summary Quality    | Is the summary clear and complete? |           |
+| ABC Extraction     | Are ABC elements correctly identified? |           |
+| Document Tagging   | Are tags accurate and complete? |             |
+| Usability          | Is the tool easy to use and fast? |            |
+| Ethical Compliance | Is language objective and is PII protected? |          |
+| Failure handling & Robustness | Does it handle noise or ambiguity well? |           |
