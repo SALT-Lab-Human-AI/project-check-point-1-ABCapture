@@ -1,3 +1,7 @@
+## User Journeys
+<img width="7344" height="3808" alt="user persona 2" src="https://github.com/user-attachments/assets/7610de2f-5ab6-41d8-9914-9d48df6ed7e3" />
+<img width="7354" height="3824" alt="user persona 1" src="https://github.com/user-attachments/assets/f7e6c76c-49a6-4461-a05d-9e32ea85ca5e" />
+
 ##  Task Flows
 <img width="1426" height="2059" alt="Voice_to_text_logging" src="https://github.com/user-attachments/assets/1e17e58b-9951-4a2c-a416-0c3e5228ee7f" />
 <img width="1904" height="1646" alt="Review_and_summarize_past_incidents" src="https://github.com/user-attachments/assets/4ba05474-06b1-4487-b0f5-ae3793c6dfc6" />
