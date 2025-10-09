@@ -1,4 +1,4 @@
-### Prompts/Instructions Used for Agent Setup
+## Prompts/Instructions Used for Agent Setup
 - Assist educators and adults working with children with autism in logging behavioral incidents quickly and efficiently.
 - *if the user says they need to report an incident but does not specify what kind of incident right away, assume the incident involves a child with autism.
 - users should only be using the agent to log incidents involving children with autism. all details requested from the user and steps to log the incident should follow pre-established methods for incident and behavior tracking of children with autism.
@@ -18,7 +18,7 @@
 \** Agent gave itself this instruction.  
 
 
-### User Prompts Tested
+## User Prompts Tested
 | Scenario Type | Task Description    | Prompt Example                       | Expected Outcome                            | Typical, Edge, or Failure Case? |
 | ------------- | ------------------- | ------------------------------------ | ------------------------------------------- | ------------------------------- |
 | Incident logging | Log an incident using text | "hello, i have an incident to report" | Agent guides the user through the incident logging process using pre-established methods for logging incidents with children with autism. | Typical                        |
@@ -28,18 +28,26 @@
 | Incident logging | Log an incident using text, but the user does not provide all the ABC Data information needed. | "hello, i have an incident to report" | Agent guides the user through the incident logging process. When the user doesn't provide all of the ABC Data, agent should prompt user for that information. | Typical          |
 
 
-### Scenarios Tested
+## Scenarios Tested
 See [scenario categories](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#scenario-categories) of [Prompting Protocol](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#prompting-protocol-for-evaluating-ai-speech-to-text-and-summarization-tools) for information on the general types of scenarios explored.
 
-# Scenario 1:
+### Scenario 1:
+> So, for the ABC form, the student is Alex Brown. The incident happened at 10.15am on October 3rd, 2025. The duration of this observation is around 30 minutes. The staff that observed this behavior was me, Valerie Frizzle, and it took place It was during our small math group at the back table where I was working with four other students at the time. And for the antecedent...
 
-### Tool Evaluation
+> A few students were talking loudly and I reminded the group to stay focused. Then Alex started tapping his pencil and humming while I was giving directions. For the behavior, after I asked him to stop, he said the noise was bothering him and pushed his worksheet off the table. For the consequence, I directed him to take a 5 minute break in the calm corner. When he came back, he finished his math problems without any issues.
+
+>So overall, I think the function was partly sensory, the noise, and partly escape, since the break really helped calm me.  
+
+<img width="1061" height="463" alt="image" src="https://github.com/user-attachments/assets/30363698-6137-4aad-9012-5dc81ad01ff2" />
+
+
+## Tool Evaluation
 See [Evaluation Dimensions](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) in [Prompting Protocol](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) for evaluation rubric.
 
 | Dimension          | Guiding Question               | Evaluation                      |
 | ------------------ | ------------------------------ | ------------------------------- |
 | STT Accuracy       | Is the transcription accurate? | TBD            |
-| Summary Quality    | Is the summary clear and complete? | TBD           |
+| Summary Quality    | Is the summary clear and complete? | The agent returns a neatly organized and complete summary of the incident, splitting up the user's information into general incident information, ABC Data categories, and behavior function hypothesis.           |
 | ABC Extraction     | Are ABC elements correctly identified? | Text: The agent is accurately able to determine whether ABC data has been included in the report or not, and prompts the user to provide the information if it has not been included. Speech: TBD.           |
 | Document Tagging   | Are tags accurate and complete? | TBD             |
 | Usability          | Is the tool easy to use and fast? | From the user's perspective, the agent is easy to interact with and the conversation flows quickly and smoothly. From an agent set-up perspective, it has taken quite some time to work on the setup of the agent, preventing a full evaluation to be completed before Checkpoint 2.            |
