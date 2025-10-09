@@ -159,5 +159,16 @@ The model effectively cleaned up the informal, spoken‑style note and produced 
 ### Reflection
 ChatGPT divided a compound note into two distinct incidents and provided clear summaries. The ABC forms included provisional functions (Sensory + Escape), which offer hypotheses about why the behaviors occurred. The tracker entries were organized with provisional dates and times; however, the assistant noted that the exact date and observer information were still needed. The synthesis of common triggers and effective responses across the two incidents provides useful insight for future interventions.
 
+### Tool Evaluation
+See [Evaluation Dimensions](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) in [Prompting Protocol](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) for evaluation rubric.
 
+| Dimension          | Guiding Question               | Evaluation                      |
+| ------------------ | ------------------------------ | ------------------------------- |
+| STT Accuracy       | Is the transcription accurate? | TBD            |
+| Summary Quality    | Is the summary clear and complete? | TBD           |
+| ABC Extraction     | Are ABC elements correctly identified? | TBD           |
+| Document Tagging   | Are tags accurate and complete? | TBD             |
+| Usability          | Is the tool easy to use and fast? | From the user's perspective, the agent is easy to interact with and the conversation flows quickly and smoothly. From an agent set-up perspective, it has taken quite some time to work on the setup of the agent, preventing a full evaluation to be completed before Checkpoint 2.            |
+| Ethical Compliance | Is language objective and is PII protected? | TBD         |
+| Failure handling & Robustness | Does it handle noise or ambiguity well? | TBD           |
 
