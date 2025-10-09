@@ -1,6 +1,12 @@
 # Notion AI Prompt Transcripts and Outputs
 
-# Scenario 1: Typical, all necessary details provided
+# Scenario 1: Typical, all necessary form details provided
+
+> “Okay, so for the ABC form the student is Alex Brown. The incident happened at 10:15 on October 3rd, 2025. The duration of this observation is around 30 min. The staff that observed this behavior was me, Valerie Frizzle, and it took place in my classroom. It was during our math small group, at the back table where I was working with four students at a time.  
+> And for the antecedent a few students were talking loudly, and I reminded the group to stay focused. Then Alex started tapping his pencil and humming while I was giving directions.  
+> For the behavior after I asked him to stop, he said the noise was bothering him and pushed his worksheet off the table.  
+> For the consequence I directed him to take a five-minute break in the calm corner. When he came back, he finished his math problems without any issues.  
+> So overall, I think the function was partly sensory due to the noise and partly escape, since the break helped him calm down.”
 
 Input audio length: 52 seconds  
 Transcription \+ Summary generation: 8 seconds  
@@ -52,7 +58,7 @@ Fill out the ABC form from the information provided from my audio. Use objective
 
 ## **1.3b Agent Response**
 
-I filled out your ABC form with objective language based on your audio and notes.[\[1\]](https://www.notion.so/Scenario-1-285334515daa80b383f5f9bb7a831f27?pvs=21) You can review it here: [abc-blank-form-2022](https://www.notion.so/abc-blank-form-2022-1e5334515daa80fa820bf18fa21efa93?pvs=21)
+I filled out your ABC form with objective language based on your audio and notes. You can review it here: [Notion export — Scenario 1 (ABC form PDF)](../File%20Outputs/Notion%20AI%20Outputs/notion_scenario1_abcform.pdf)
 
 What I captured
 
@@ -81,12 +87,14 @@ Add the form to the abc form tracker
 
 I added “Scenario 1 Form” to ABC Forms with the details from your form.
 
-* Open the entry: [Scenario 1 Form](https://www.notion.so/Scenario-1-Form-402f316d06cc46278ad0df227b5998cd?pvs=21)  
+* Open the entry: [Notion export — Scenario 1 (ABC form PDF)](../File%20Outputs/Notion%20AI%20Outputs/notion_scenario1_abcform.pdf) 
 * View it in the database:
 
 Want me to make a quick “New ABC Observation” template so future entries follow the same layout?
 
 # Scenario 2: Incomplete incident description
+
+> “This morning during our math small group, Alex began tapping his pencil and humming while I was giving instructions. And just before that, a few other students were talking loudly, and I reminded the group to stay focused. When I asked Alex to stop tapping, he said the noise from the others was bothering him and pushed his worksheet off the table. I directed him to the calm corner for a five-minute break, and when he came back, he completed his math problems without any further issues.”
 
 Input audio length: 26 sec  
 Transcription \+ Summary generation: 11 seconds  
@@ -132,7 +140,7 @@ Fill out the ABC form from the information provided from my audio. Use objective
 
 ## **2.3b Agent Response**
 
-I filled in the ABC form on your page using objective language from your audio. I also summarized antecedents, behaviors, consequences, and what was effective.
+I filled in the ABC form on your page using objective language from your audio. I also summarized antecedents, behaviors, consequences, and what was effective. [Notion export — Scenario 2 (ABC form PDF)](../File%20Outputs/Notion%20AI%20Outputs/notion_scenario2_abcform.pdf)
 
 To complete the form accurately, I still need a few details:
 
@@ -172,6 +180,10 @@ I can also update any missing details:
 * Any injuries/property damage or additional staff involvement
 
 # Scenario 3: Emotional and Subjective Language
+
+> “Well, this morning during math group was just great — I have to log an incident report for it. Okay, this was with Alex Brown, and it happened this morning at about 10:15, October 3rd, 2025. The whole thing lasted maybe thirty minutes. And, I’m Ms. Valerie Frizzle, and it was during our math small group at the back table in my classroom, where I was working with four students.  
+> So I had just reminded everyone to stay focused because a few kids were talking way too loudly, and this is when Alex decided it would be the perfect time to start his own little percussion concert, just tapping his pencil and humming right in the middle of my directions. When I asked him to stop, he said the noise was bothering him, which, sure, like it makes sense since he was adding to it. Then he pushed his worksheet off the table like it had done something to him.  
+> I told him to take five minutes in the calm corner to cool off — and, surprise, that fixed everything. He came back calm as can be and finished his math problems like nothing had ever happened. Honestly, I don't know what to say. I’d say it was partly sensory, with the noise, and partly just escape, since the quick break seemed to reset him completely.”
 
 Input audio length: 48 sec  
 Transcription \+ Summary generation: 7 seconds  
@@ -248,7 +260,7 @@ Add the form to the abc form tracker
 
 ## **3.4b Agent Response**
 
-Done. I added this incident to your ABC Form Tracker as a new entry: [Scenario 3 — Alex Brown — 2025-10-03](https://www.notion.so/Scenario-3-Alex-Brown-2025-10-03-d4fccfb5e3b64bb2b3192250ff7a15e8?pvs=21).[\[1\]](https://www.notion.so/286d6a32e3d8808197bfe628430d191b?pvs=21)
+Done. I added this incident to your ABC Form Tracker as a new entry: [Notion export — Scenario 3 (ABC form PDF)](../File%20Outputs/Notion%20AI%20Outputs/notion_scenario3_abcform.pdf)
 
 What I recorded:
 
@@ -259,6 +271,10 @@ What I recorded:
 * Linked source: Scenario 3 page
 
 # Scenario 4: Two students interacting (ambiguity)
+
+> “This incident was between Jordan Smith and Alex Brown, and it happened today during indoor recess at around 1:30 in the afternoon — October 3rd, 2025. I’m Ms. Valerie Frizzle, and it lasted maybe ten minutes or so in my classroom play area where the building blocks are set up.  
+> I didn’t actually see how it started. When I looked over, Jordan was saying Alex took the blocks from him, and Alex was insisting he had them first. They were both getting louder, talking over each other, and then Jordan knocked over what Alex had built. Alex yelled and pushed the blocks off the table. I stepped in right away and had them take breaks on opposite sides of the room. After a few minutes, they both calmed down, apologized, and helped clean up.  
+> Honestly, I’m not sure who started it. It might have been about taking turns or sharing, but it escalated pretty quickly once they both got frustrated.”
 
 Input audio length: 48 seconds  
 Transcription \+ Summary generation: 7 seconds  
@@ -348,13 +364,12 @@ Added a new entry to the ABC Form Tracker with the incident details:
 
 Open the tracker or the new entry:
 
-* ABC Form Tracker[\[1\]](https://www.notion.so/286d6a32e3d8808197bfe628430d191b?pvs=21)  
-* New entry[\[2\]](https://www.notion.so/Scenario-4-Jordan-Smith-Alex-Brown-2025-10-03-018706ed48664a1bb8adeffbf68043fb?pvs=21)
-
+* ABC Form Tracker
+* New entry[Notion export — Scenario 4 (ABC form PDF)](../File%20Outputs/Notion%20AI%20Outputs/notion_scenario4_abcform.pdf)
 Would you like me to:
 
 * Create separate tracker entries for each student instead of a combined one?  
-* Attach or link the filled ABC form page to the entry for quick reference?[\[3\]](https://www.notion.so/abc-blank-form-2022-286d6a32e3d881a680adc15da3f64914?pvs=21)
+* Attach or link the filled ABC form page to the entry for quick reference?
 
 ## **\*Prompt: Response to agent’s questions**
 
@@ -362,12 +377,27 @@ Please create only create an entry for Alex Brown and link the form for quick re
 
 # Scenario 5: Multiple incidents one recording
 
+>“This report is for Alex Brown and took place today, October 3rd, 2025. I’m Ms. Valerie Frizzle, and both incidents happened in my classroom. The first one was around 10:15 during math small group — it lasted maybe ten minutes. The second was later in the day, right before dismissal at about 2:45.  
+> So, for the first one, Alex was at the back table working on math problems when a couple of other students were chatting loudly. I reminded everyone to focus, and Alex started tapping his pencil and humming. When I asked him to stop, he said the noise was too much and pushed his worksheet off the table. I had him take a short break in the calm corner, and when he came back, he finished his work without any issues.  
+> Then, later in the afternoon, during clean-up time, Alex got frustrated because another student moved his backpack. He started yelling that people were touching his stuff and refused to line up. I asked him to take a few deep breaths, but he kept arguing, so I had him wait by the door with me until the rest of the class was ready. Once things settled, he apologized and walked out calmly.  
+> Both times, it seemed like the noise and unexpected changes set him off, but once he got space and structure, he was able to reset.”
+
 Input audio length: 1:23  
 Transcription \+ Summary generation: 9 seconds  
 Filling form task:  36 seconds  
 Document tagging: 36 seconds
 
-## **5.1 Summary**
+## **5.1 Transcript**
+
+This report is for Alex Brown, and it took place today, October 3rd, 2025\. I'm Ms. Valerie Frizzle, and both incidents happened in my classroom. The first one was around 10.15 during math small group. It lasted maybe 10 minutes. The second one was later in the day, right before dismissal, about 2.45.
+
+So for the first one, Alex was at the back of the table working on math problems when a couple of other students were chatting loudly. I reminded everyone to focus and Alex started tapping his pencil and humming. When I asked him to stop, he said the noise was too much and pushed his worksheet off the table. I had him take a short break in the calm corner and when he came back, he finished his work without any issues.
+
+Then later in the afternoon, during clean-up time, Alex got frustrated because another student moved his backpack. He started yelling that people were judging his stuff and refused to line up. I asked him to take a few deep breaths, but he kept arguing, so I had him wait by the door with me until the rest of the class was ready.
+
+Once things settled, he apologized and walked out calmly. Both times, it seemed like the noise and unexpected changes set him off, but once he got space and started.
+
+## **5.2 Summary**
 
 ### **Report Overview**
 
@@ -401,15 +431,6 @@ Document tagging: 36 seconds
   * Getting space from the situation  
   * Time to calm down before rejoining activities
 
-## **5.2 Transcript**
-
-This report is for Alex Brown, and it took place today, October 3rd, 2025\. I'm Ms. Valerie Frizzle, and both incidents happened in my classroom. The first one was around 10.15 during math small group. It lasted maybe 10 minutes. The second one was later in the day, right before dismissal, about 2.45.
-
-So for the first one, Alex was at the back of the table working on math problems when a couple of other students were chatting loudly. I reminded everyone to focus and Alex started tapping his pencil and humming. When I asked him to stop, he said the noise was too much and pushed his worksheet off the table. I had him take a short break in the calm corner and when he came back, he finished his work without any issues.
-
-Then later in the afternoon, during clean-up time, Alex got frustrated because another student moved his backpack. He started yelling that people were judging his stuff and refused to line up. I asked him to take a few deep breaths, but he kept arguing, so I had him wait by the door with me until the rest of the class was ready.
-
-Once things settled, he apologized and walked out calmly. Both times, it seemed like the noise and unexpected changes set him off, but once he got space and started.
 
 ## **5.3a Form Completion Prompt**
 
@@ -417,7 +438,7 @@ Fill out the ABC form from the information provided from my audio. There should 
 
 ## **5.3b Agent Response**
 
-I filled out two ABC forms on Scenario 5, one for each incident described in your audio, using objective language.[\[1\]](https://www.notion.so/Scenario-5-286d6a32e3d880048e38c7838a415d0f?pvs=21)
+I filled out two ABC forms on Scenario 5, one for each incident described in your audio, using objective language. [Notion export — Scenario 5 Incident 1 (ABC form PDF)](../File%20Outputs/Notion%20AI%20Outputs/notion_scenario5_abcform_incident1.pdf) [Notion export — Scenario 5 Incident 2 (ABC form PDF)](../File%20Outputs/Notion%20AI%20Outputs/notion_scenario5_abcform_incident2.pdf)
 
 To finalize accurately, please confirm or provide:
 
@@ -437,14 +458,19 @@ Create two separate pages for each incident and log both incidents in ABC Form T
 
 Done. I created two separate pages for each incident and logged both incidents in the ABC Form Tracker.
 
-* Incident 1 page[\[1\]](https://www.notion.so/Incident-1-2025-10-03-10-15-Alex-Brown-96a8e67221434ad38787c8bdd36d6a51?pvs=21)  
-* Incident 2 page[\[2\]](https://www.notion.so/Incident-2-2025-10-03-14-45-Alex-Brown-e8a1eeec777d44d38103cc0b26c146f7?pvs=21)  
-* Tracker entries: 10:15 AM[\[3\]](https://www.notion.so/Scenario-5-Alex-Brown-2025-10-03-10-15-0cf01fe46ba54b389dd7e666e139bf0f?pvs=21) and 2:45 PM[\[4\]](https://www.notion.so/Scenario-5-Alex-Brown-2025-10-03-14-45-fed5ad58f75f4c1ebccda1b8730c394b?pvs=21)  
-* ABC Form Tracker[\[5\]](https://www.notion.so/286d6a32e3d8808197bfe628430d191b?pvs=21)
+* Incident 1 page 
+* Incident 2 page
+* Tracker entries
+* ABC Form Tracker
 
 Want me to add backlinks between the tracker entries and the incident pages for quicker navigation?
 
 # Scenario 6
+> “Okay, so for the ABC form the student is Alex Brown. The incident happened at 10:15 on October 3rd, 2025. The duration of this observation is around 30 min. The staff that observed this behavior was me, Valerie Frizzle, and the setting where the observation occurred was in my classroom. It was during our math small group, at the back table where I was working with four students at a time.  
+> For the antecedent a few students were talking loudly, and I reminded the group to stay focused. Then Alex started tapping his pencil and humming while I was giving directions.  
+> For the behavior after I asked him to stop, he said the noise was bothering him and pushed his worksheet off the table.  
+> For the consequence I directed him to take a five-minute break in the calm corner. When he came back, he finished his math problems without any issues.  
+> So overall, I think the function was partly sensory due to the noise and partly escape, since the break helped him calm down.” + *artificial kindergarten classroom sounds playing at full volume*.
 
 Input audio length: 56 seconds  
 Transcription \+ Summary generation: 8 seconds  
@@ -517,5 +543,5 @@ Add the form to the abc form tracker
 
 Added to the ABC Form Tracker with a linked entry to your filled form.
 
-* Tracker entry: [Scenario 6 — Alex Brown — 2025-10-03 (10:15 AM)](https://www.notion.so/Scenario-6-Alex-Brown-2025-10-03-10-15-time-pending-AM-PM-4fcaa2c1643e4aa3ad9848311770d368?pvs=21)  
-* Linked form: [abc-blank-form-2022](https://www.notion.so/abc-blank-form-2022-286d6a32e3d8819fa466e4f5a5c43b69?pvs=21)
+* Tracker entry: 
+* Linked form: [Notion export — Scenario 6 (ABC form PDF)](../File%20Outputs/Notion%20AI%20Outputs/notion_scenario6_abcform.pdf)
