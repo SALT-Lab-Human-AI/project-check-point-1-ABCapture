@@ -29,17 +29,17 @@
 
 
 ### Scenarios Tested
-See [Scenarios section](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md) of [Prompting Protocol](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#prompting-protocol-for-evaluating-ai-speech-to-text-and-summarization-tools).
+See [Scenarios section](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#scenario-categories) of [Prompting Protocol](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#prompting-protocol-for-evaluating-ai-speech-to-text-and-summarization-tools).
 
 ### Tool Evaluation
-See [Evaluation Dimensions](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#prompting-protocol-for-evaluating-ai-speech-to-text-and-summarization-tools) in [Prompting Protocol](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) for evaluation rubric.
+See [Evaluation Dimensions](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) in [Prompting Protocol](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) for evaluation rubric.
 
 | Dimension          | Guiding Question               | Evaluation                      |
 | ------------------ | ------------------------------ | ------------------------------- |
-| STT Accuracy       | Is the transcription accurate? |             |
-| Summary Quality    | Is the summary clear and complete? |           |
-| ABC Extraction     | Are ABC elements correctly identified? |           |
-| Document Tagging   | Are tags accurate and complete? |             |
-| Usability          | Is the tool easy to use and fast? |            |
-| Ethical Compliance | Is language objective and is PII protected? |          |
-| Failure handling & Robustness | Does it handle noise or ambiguity well? |           |
+| STT Accuracy       | Is the transcription accurate? | TBD            |
+| Summary Quality    | Is the summary clear and complete? | TBD           |
+| ABC Extraction     | Are ABC elements correctly identified? | TBD           |
+| Document Tagging   | Are tags accurate and complete? | TBD             |
+| Usability          | Is the tool easy to use and fast? | From the user's perspective, the agent is easy to interact with and the conversation flows quickly and smoothly. From an agent set-up perspective, it has taken quite some time to work on the setup of the agent, preventing a full evaluation to be completed before Checkpoint 2.            |
+| Ethical Compliance | Is language objective and is PII protected? | TBD         |
+| Failure handling & Robustness | Does it handle noise or ambiguity well? | TBD           |
