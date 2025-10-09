@@ -1,11 +1,18 @@
 # Gap Analysis
 
 ## NotebookLM
-The team’s evaluation of NotebookLM showed that while it performs well in summarizing structured text, it lacks several features needed for real classroom documentation. In terms of **accuracy**, NotebookLM generated clear summaries when inputs were well written but often missed emotional tone and contextual nuance. **Reliability** was consistent, though outputs tended to sound formal and detached. Regarding **latency**, the system responded within a reasonable time but required multiple steps such as uploading sources, selecting them, and then prompting which made it slower and less efficient for teachers working in real time.
 
-There was clear **UX friction** since NotebookLM does not support **voice input** and cannot **automatically tag incidents** without manual prompting. These limitations make it impractical for teachers to use while managing a class. In terms of **safety**, the tool relies on Google’s cloud infrastructure, meaning data privacy is dependent on external policies and not explicitly FERPA-compliant. **Cost** is currently not a concern while in beta, but future pricing remains uncertain.  
+| **Dimension** | **Guiding question** | **NotebookLM Findings** |
+|----------------|----------------------|-----------------------------------------------|
+| **STT Accuracy** | Is the transcription accurate? | ❌ Not applicable — NotebookLM only handles written text, not live speech. Cleaned messy input well but cannot process overlapping or noisy audio. |
+| **Summary Quality** | Is the summary clear and complete? | ✅ Accurate and concise with no hallucinations. ❌ Tone often too formal or detached; lacked emotional nuance. |
+| **ABC Extraction** | Are ABC elements correctly identified? | ✅ Correctly identified Antecedent, Behavior, Consequence in structured text. ❌ Missed subtle emotional or contextual cues in messy input. |
+| **Document Tagging** | Are tags accurate and complete? | ✅ Produced relevant and multi-layered tags (student, behavior type, resolution). ❌ Manual prompting required; can’t auto-tag; no date/time capture. |
+| **Usability** | Is the tool easy to use and fast? | ⚠️ Structured but multi-step workflow (upload, select, prompt); not real-time or hands-free. Latency acceptable but impractical for classrooms. |
+| **Ethical Compliance** | Is language objective and is PII protected? | ✅ Neutral, non-stigmatizing language. ⚠️ Data privacy unclear; relies on Google’s cloud, not explicitly FERPA-compliant. |
+| **Failure Handling & Robustness** | Does it handle noise or ambiguity well? | ⚙️ Handled messy input and multiple students fairly well. ❌ Produced rigid, report-like summaries; struggled with vague details. |
 
-Overall, the team concluded that NotebookLM is effective for structured text summarization but lacks automation, emotional awareness, and real-time usability. These weaknesses highlight the opportunity for ABCapture to introduce hands-free voice logging, automatic tagging, and secure data management tailored to education settings.
+---
 
 ## ChatGPT Agent
 | Dimension          | Guiding Question               | Evaluation                      |
