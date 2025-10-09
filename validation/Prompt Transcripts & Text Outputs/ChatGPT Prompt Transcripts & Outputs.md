@@ -159,16 +159,3 @@ The model effectively cleaned up the informal, spoken‑style note and produced 
 ### Reflection
 ChatGPT divided a compound note into two distinct incidents and provided clear summaries. The ABC forms included provisional functions (Sensory + Escape), which offer hypotheses about why the behaviors occurred. The tracker entries were organized with provisional dates and times; however, the assistant noted that the exact date and observer information were still needed. The synthesis of common triggers and effective responses across the two incidents provides useful insight for future interventions.
 
-### Tool Evaluation
-See [Evaluation Dimensions](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) in [Prompting Protocol](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) for evaluation rubric.
-
-| Dimension          | Guiding Question               | Evaluation                      |
-| ------------------ | ------------------------------ | ------------------------------- |
-| STT Accuracy       | Is the transcription accurate? | The agent transcribed the voice input for scenario 1 accurately, preserving the key words and meaning.            |
-| Summary Quality    | Is the summary clear and complete? | Summaries were concise, neutral and captured key antecedents, behaviours, consequences and resolutions. They occasionally omitted emotional tone or intensity, which could add context.           |
-| ABC Extraction     | Are ABC elements correctly identified? | The agent consistently identified the antecedent, behaviour and consequence for each scenario and asked for missing details (dates, times, observers) when necessary.           |
-| Document Tagging   | Are tags accurate and complete? | Tags correctly labelled students and basic behaviour types, but did not include emotional states, severity or hypothesised functions, limiting comprehensiveness.             |
-| Usability          | Is the tool easy to use and fast? | The agent was responsive and followed instructions closely, producing structured outputs without much prompting. Its step‑by‑step approach to gathering missing information helps ensure completeness but requires occasional follow‑up questions, which can slow the overall workflow.           |
-| Ethical Compliance | Is language objective and is PII protected? | The agent used professional, objective language and avoided sharing personally identifiable information beyond what the user provided.         |
-| Failure handling & Robustness | Does it handle noise or ambiguity well? | The agent handled messy, voice‑style input and multi‑student scenarios effectively, cleaning disfluent text and splitting combined incidents. It requested clarifications when information was missing, but did not describe the intensity or impact of behaviours, which would help gauge severity.           |
-
