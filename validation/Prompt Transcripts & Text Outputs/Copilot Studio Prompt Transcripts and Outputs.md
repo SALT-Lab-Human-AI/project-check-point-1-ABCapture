@@ -1,5 +1,4 @@
 ### Prompts/Instructions Used for Agent Setup
-*Copilot Studio:*
 - Assist educators and adults working with children with autism in logging behavioral incidents quickly and efficiently.
 - *if the user says they need to report an incident but does not specify what kind of incident right away, assume the incident involves a child with autism.
 - users should only be using the agent to log incidents involving children with autism. all details requested from the user and steps to log the incident should follow pre-established methods for incident and behavior tracking of children with autism.
@@ -22,5 +21,12 @@
 ### User Prompts Tested
 | Scenario Type | Task Description    | Prompt Example                       | Expected Outcome                            | Typical, Edge, or Failure Case? |
 | ------------- | ------------------- | ------------------------------------ | ------------------------------------------- | ------------------------------- |
-| Incident logging | Log an incident using text or speech | "hello, i have an incident to report" | Agent guides the user through the incident logging process using pre-established methods for logging incidents with children with autism. | Typical                        |
+| Incident logging | Log an incident using text | "hello, i have an incident to report" | Agent guides the user through the incident logging process using pre-established methods for logging incidents with children with autism. | Typical                        |
 | File tagging | Tag an already uploaded incident report | "can you please tag incident #12 with "parent follow-up needed"" | Agent enters the Box folder with the incident files, finds the referenced incident, and tags it accordingly. | Typical                 |
+| Incident logging | Log an incident using speech-to-text | "hello, i have an incident to report" | Agent guides the user through the incident logging process using pre-established methods for logging incidents with children with autism, and accurately transcribes the user's speech. | Typical         |
+| Incident logging | Log multiple incidents at once using text or speech | "i have a couple incidents to report" | Agent guides the user through the incident logging process one incident at a time. | Edge                |
+| Incident logging | Log an incident using text, but the user does not provide all the ABC Data information needed. | "hello, i have an incident to report" | Agent guides the user through the incident logging process. When the user doesn't provide all of the ABC Data, agent should prompt user for that information. | Typical          |
+
+
+### Scenarios Tested
+See (Scenarios section)[https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md] of (Prompting Protocol)[https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#prompting-protocol-for-evaluating-ai-speech-to-text-and-summarization-tools].
