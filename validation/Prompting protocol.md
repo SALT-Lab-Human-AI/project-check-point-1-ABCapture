@@ -9,7 +9,8 @@ This protocol defines the scenarios, prompts, and tasks used to evaluate multipl
 5. Handle typical, edge, and failure cases relevant to classrooms supporting elementary school students with Autism Spectrum Disorder (ASD).
 
 ## Tools
-Most school behavioral incident forms are completed manually (paper forms) or via proprietary digital behavior-tracking systems. Those specialized proprietary tools often have limited or no accessible AI capabilities and we do not have direct access for testing. To evaluate what teachers can already use today, we selected several widely-available, generalized AI tools to test how they handle speech-to-text, summarization, ABC extraction, and document tagging in classroom incident logging. The tools we tested are: 
+Most school behavioral incident forms are completed manually (paper forms) or via proprietary digital behavior-tracking systems. Those specialized proprietary tools often have limited or no accessible AI capabilities and we do not have direct access for testing. To evaluate what teachers can already use today, we selected several widely-available, generalized AI tools to test how they handle speech-to-text, summarization, ABC extraction, and document tagging in classroom incident logging. The tools we tested are:
+
 ![ChatGPT logo](https://img.shields.io/badge/ChatGPT-00A67A?logo=openai&logoColor=white&style=flat-square)![Copilot Studio logo](https://img.shields.io/badge/Copilot%20Studio-1389FF?logo=github-copilot&logoColor=white&style=flat-square) ![NotebookLM logo](https://img.shields.io/badge/NotebookLM-4285F4?logo=google&logoColor=white&style=flat-square) ![NotionAI logo](https://img.shields.io/badge/NotionAI-000000?logo=notion&logoColor=white&style=flat-square)
 
 ## Evaluation Dimensions
