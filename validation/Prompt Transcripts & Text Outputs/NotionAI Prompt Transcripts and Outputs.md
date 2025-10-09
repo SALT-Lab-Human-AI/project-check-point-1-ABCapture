@@ -1,5 +1,10 @@
 # Notion AI Prompt Transcripts and Outputs
 
+# Setup 
+- Speech-to-text and meeting summary were generated with Notion AI Meeting.
+- A Notion database ("ABC Forms" tracker) was created to test the agent document tagging capabilities when adding the form to the database. 
+- Using the audio, the Notion AI agent populated the ABC form(s) and added  the filled form(s) to the database including student, date & time of incident, type of incident and function of behavior(s) tag for quick reference.
+
 # Scenario 1: Typical, all necessary form details provided
 
 > “Okay, so for the ABC form the student is Alex Brown. The incident happened at 10:15 on October 3rd, 2025. The duration of this observation is around 30 min. The staff that observed this behavior was me, Valerie Frizzle, and it took place in my classroom. It was during our math small group, at the back table where I was working with four students at a time.  
