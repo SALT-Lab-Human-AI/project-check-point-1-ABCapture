@@ -2,7 +2,7 @@
 
 ## Purpose
 This protocol defines the scenarios, prompts, and tasks used to evaluate multiple AI tools for their ability to:
-1. Accurately transcribe short classroom speech segments describing behavioral incidents.
+1. Accurately transcribe short classroom speech (or text when STT not available) segments describing behavioral incidents.
 2. Generate concise summaries of incidents.
 3. Complete or assist in filling out an ABC (Antecedent–Behavior–Consequence) form.
 4. Accurately tag incident documents (document tagging) — extract and label student name, incident type, date, and inferred behavior function(s).
