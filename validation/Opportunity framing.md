@@ -19,7 +19,7 @@ However, none of the tools provided a **fully integrated, context-aware, and pri
 
 ---
 
-## Major Gaps Identified
+## Opportunities Identified
 
 ### 1. Lack of Real-Time, Hands-Free Workflow  
 **Problem:** Current tools require multi-step actions (record, upload, prompt) instead of instant capture.  
