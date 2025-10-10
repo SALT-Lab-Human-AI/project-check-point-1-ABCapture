@@ -49,7 +49,7 @@ However, none of the tools provided a **fully integrated, context-aware, and pri
 ---
 
 ### 4. Partial Automation in Tagging and Metadata  
-**Finding:** While tools accurately generated basic tags, **most required manual prompting** and did not automatically capture metadata such as date/time.  
+**Finding:** While tools accurately generated basic tags, **most required manual prompting** and did not automatically capture metadata and had diffcukty handling multi-tagging for function of behavior.  
 **Impact:** Increased effort and inconsistent data entry.  
 **Opportunity:**  
 - Automate **metadata capture** (timestamp, user ID, student, context).  
