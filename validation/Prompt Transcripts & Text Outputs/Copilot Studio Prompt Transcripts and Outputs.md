@@ -39,17 +39,3 @@ See [scenario categories](https://github.com/SALT-Lab-Human-AI/project-check-poi
 >So overall, I think the function was partly sensory, the noise, and partly escape, since the break really helped calm me.  
 
 <img width="1061" height="463" alt="image" src="https://github.com/user-attachments/assets/30363698-6137-4aad-9012-5dc81ad01ff2" />
-
-
-## Tool Evaluation
-See [Evaluation Dimensions](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) in [Prompting Protocol](https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/validation/Prompting%20protocol.md#evaluation-dimensions) for evaluation rubric.
-
-| Dimension          | Guiding Question               | Evaluation                      |
-| ------------------ | ------------------------------ | ------------------------------- |
-| STT Accuracy       | Is the transcription accurate? | TBD            |
-| Summary Quality    | Is the summary clear and complete? | The agent returns a neatly organized and complete summary of the incident, splitting up the user's information into general incident information, ABC Data categories, and behavior function hypothesis.           |
-| ABC Extraction     | Are ABC elements correctly identified? | Text: The agent is accurately able to determine whether ABC data has been included in the report or not, and prompts the user to provide the information if it has not been included. ABC data is categorized correctly (Antecedent, Behavior, & Consequence). Speech: TBD.           |
-| Document Tagging   | Are tags accurate and complete? | TBD             |
-| Usability          | Is the tool easy to use and fast? | The agent is easy to interact with and the conversation flows quickly and smoothly. The user is not required to step in to complete the reporting process beyond providing the initial incident details and any details that were initially left out.           |
-| Ethical Compliance | Is language objective and is PII protected? | The agent uses objective language as instructed to. As it is currently set-up, it does not seem able to accurately identify all instances of more subjective language-use by the user.         |
-| Failure handling & Robustness | Does it handle noise or ambiguity well? | TBD           |
