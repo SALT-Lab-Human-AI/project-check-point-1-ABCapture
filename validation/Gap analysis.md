@@ -6,7 +6,7 @@ See [Evaluation Dimensions](https://github.com/SALT-Lab-Human-AI/project-check-p
 | **Dimension** | **Guiding question** | **NotebookLM Findings** |
 |----------------|----------------------|-----------------------------------------------|
 | **STT Accuracy** | Is the transcription accurate? | ❌ Not applicable — NotebookLM only handles written text, not live speech. Cleaned messy input well but cannot process overlapping or noisy audio. |
-| **Summary Quality** | Is the summary clear and complete? | ✅ Accurate and concise with no hallucinations. ❌ Tone often too formal or detached; lacked emotional nuance. |
+| **Summary Quality** | Is the summary clear and complete? | ✅ Accurate and concise with no hallucinations. Tone often too formal appropriate for parent/teacher communication. |
 | **ABC Extraction** | Are ABC elements correctly identified? | ✅ Correctly identified Antecedent, Behavior, Consequence in structured text. ❌ Missed subtle emotional or contextual cues in messy input. |
 | **Document Tagging** | Are tags accurate and complete? | ✅ Produced relevant and multi-layered tags (student, behavior type, resolution). ❌ Manual prompting required; can’t auto-tag; no date/time capture. |
 | **Usability** | Is the tool easy to use and fast? | ⚠️ Structured but multi-step workflow (upload, select, prompt); not real-time or hands-free. Latency acceptable but impractical for classrooms. |
