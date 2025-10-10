@@ -27,16 +27,7 @@ These screens visualize the main interfaces and show how users complete each cor
 **System Feedback:** Displays *“Processing audio…”* followed by a short confirmation message.
 
 
-###  Screen 3: AI Summary & Tags
-**Purpose:** Provides an editable AI-generated summary with smart tags.  
-**Key Interactions:**
-- View the auto-generated summary and suggested tags.  
-- Edit tags or text if needed.  
-- Tap “Save Record” to confirm the incident.  
-**System Feedback:** A success toast — *“Incident saved successfully”* — appears.
-
-
-###  Screen 4: Review & Summarize Past Incidents
+###  Screen 3: Review & Summarize Past Incidents
 **Purpose:** Displays logged incidents and generates AI summaries.  
 **Key Interactions:**
 - Search or filter by student, tag or date range.  
@@ -45,7 +36,7 @@ These screens visualize the main interfaces and show how users complete each cor
 **System Feedback:** Shows *“No records found”* when empty; spinner during AI analysis.
 
 
-###  Screen 5: Auto-Tag & Organizer
+###  Screen 4: Auto-Tag & Organizer
 **Purpose:** Helps users manage uploaded or saved notes by student or category.  
 **Key Interactions:**
 - Upload new notes or review AI-tagged ones.  
