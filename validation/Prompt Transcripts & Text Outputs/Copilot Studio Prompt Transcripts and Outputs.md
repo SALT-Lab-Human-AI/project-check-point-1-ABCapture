@@ -41,9 +41,9 @@ See [scenario categories](https://github.com/SALT-Lab-Human-AI/project-check-poi
 
 #### Scenario 1 Reflection:
 The conversation was initiated with the user prompt...
-> I have an incident to report
-And then the agent responded by requesting the following information from the user, guiding them through the different pieces of information needed to properly follow pre-established methods for reporting incidents involving children with autism.
-<img width="553" height="263" alt="image" src="https://github.com/user-attachments/assets/4d9129db-ff56-48b3-8b94-58405dae7c46" 
+> I have an incident to report  
+And then the agent responded by requesting the following information from the user, guiding them through the different pieces of information needed to properly follow pre-established methods for reporting incidents involving children with autism.  
+<img width="553" height="263" alt="image" src="https://github.com/user-attachments/assets/4d9129db-ff56-48b3-8b94-58405dae7c46" /> 
 
-After the user provides the above scenario information, the agent responded with the following summary. The agent's response effectively summarizes the incident as described by the user.
+After the user provides the above scenario information, the agent responded with the following summary. The agent's response effectively summarizes the incident as described by the user.  
 <img width="1061" height="463" alt="image" src="https://github.com/user-attachments/assets/30363698-6137-4aad-9012-5dc81ad01ff2" />
