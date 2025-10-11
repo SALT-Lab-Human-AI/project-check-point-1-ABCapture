@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Behavioral Incident Logger</title>
+    <title>ABCapture</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,8 +13,8 @@
         <header class="ai-header">
             <div class="ai-avatar">🤖</div>
             <div class="ai-info">
-                <h1>AI Incident Assistant</h1>
-                <p class="ai-tagline">Streamlined ABC Data Collection for Autism Support</p>
+                <h1>ABCapture: AI Incident Reporting Assistant</h1>
+                <p class="ai-tagline">Streamlined ABC Data Collection for Incident Reporting</p>
             </div>
             <div class="security-badges">
                 <span class="badge">🔒 FERPA Compliant</span>
@@ -27,7 +27,7 @@
             <div class="ai-conversation">
                 <div class="ai-message">
                     <div class="ai-bubble">
-                        <p class="ai-greeting">Hi! I'm here to help you quickly document a behavioral incident for a child with autism using the ABC data method. This will only take a minute.</p>
+                        <p class="ai-greeting">Hi! I'm here to help you quickly document a behavioral incident using the ABC Data method. This will only take a few minutes.</p>
                     </div>
                 </div>
 
@@ -35,15 +35,22 @@
                     <div class="ai-bubble info-request">
                         <p><strong>I need the following information - you can tell me everything at once, either by typing or speaking:</strong></p>
                         <ul class="required-info">
-                            <li>• Student/child name</li>
-                            <li>• Your name and role</li>
-                            <li>• Date and time (if different from now)</li>
-                            <li>• Location where incident occurred</li>
-                            <li>• <strong>ANTECEDENT:</strong> What happened right before the behavior?</li>
+                            <li>• <strong>Student/Child Name</strong></li>
+                            <li>• <strong>Your Name and Role</strong></li>
+                            <li>• <strong>Date and Time:</strong> (if different from now)</li>
+                            <li>• <strong>Location:</strong> Where did the incident occur?</li>
+                            <li>• <strong>ANTECEDENT:</strong> What happened right before the behavior? What was the child doing/participating in?</li>
                             <li>• <strong>BEHAVIOR:</strong> Describe exactly what the child did</li>
                             <li>• <strong>CONSEQUENCE:</strong> What happened immediately after?</li>
-                            <li>• Duration: How long did it last?</li>
-                            <li>• Any additional relevant details</li>
+                            <li>• <strong>Duration:</strong> How long did the incident last?</li>
+                            <li>
+                                <strong>Behavior Hypothesis:</strong> In your opinion, what do you hypothesize the function of the behavior to be?
+                                <ul>
+                                    <li><strong>Select One: Get/Obtain or Escape/Avoid</strong>></li>
+                                    <li><strong>Select One: Tasks/Demands, Activities, Attention, Settings, People, Objects, or Sensory Stimuli</strong></li>
+                                </ul>
+                            </li>
+                            <li>Any additional relevant details?</li>
                         </ul>
                     </div>
                 </div>
@@ -51,7 +58,7 @@
 
             <div class="input-section">
                 <div class="input-container">
-                    <label class="input-label">Tell me about the incident (all details at once):</label>
+                    <label class="input-label">Tell me about the incident by providing all the required information listed above:</label>
                     <div class="input-wrapper">
                         <textarea 
                             id="incident-input" 
@@ -65,7 +72,7 @@
                     
                     <div class="input-controls">
                         <button class="btn btn--voice" id="voice-input-btn">
-                            🎤 Record Everything at Once
+                            🎤 Voice Input
                         </button>
                         <button class="btn btn--outline" id="clear-input-btn">
                             Clear & Start Over
@@ -84,7 +91,7 @@
             <div class="processing-content">
                 <div class="ai-message">
                     <div class="ai-bubble">
-                        <p>Got it! Let me organize this information into the proper ABC format...</p>
+                        <p>Got it! Let me organize this information into the proper incident report format...</p>
                     </div>
                 </div>
 
@@ -97,7 +104,7 @@
                         </div>
                         <div class="processing-step" data-step="2">
                             <span class="step-icon">🔍</span>
-                            <span class="step-text">Identifying ABC components...</span>
+                            <span class="step-text">Identifying ABC Data components...</span>
                         </div>
                         <div class="processing-step" data-step="3">
                             <span class="step-icon">🏗️</span>
