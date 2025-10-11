@@ -1500,3 +1500,32 @@ select.form-control {
     animation: none;
   }
 }
+
+/* Style nested option lists in required info */
+.required-info li ul {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  margin-left: 32px; /* Increased indent for nested list */
+  padding-left: 24px;
+  list-style-type: disc;
+}
+
+.required-info li ul li {
+  font-size: 0.96em;
+  color: var(--color-text-secondary, #5a5a5a);
+  line-height: 1.4;
+  padding: 4px 0;
+  margin: 0;
+}
+
+/* Restore left alignment for outer list items following a nested list */
+.required-info > li {
+  margin-left: 0px;
+  padding-left: 0px;
+}
+
+/* Optional: Make the 'Behavior Hypothesis' label stand out more if needed */
+.required-info strong {
+  color: var(--color-primary, #21808d);
+  font-weight: var(--font-weight-semibold, 600);
+}
