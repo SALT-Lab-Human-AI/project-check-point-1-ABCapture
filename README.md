@@ -1,6 +1,4 @@
- <img width="200" height="200" alt="Gemini_Generated_Image_3ri7cf3ri7cf3ri7" src="https://github.com/user-attachments/assets/1a5f5ebf-339a-458b-be36-939033efdcb4" />
- 
- > **Image Credits:** Icon was generated using *Google Gemini (2025)* for illustrative purposes.
+<img width="288" height="68" alt="Screenshot 2025-10-15 at 5 40 14 PM" src="https://github.com/user-attachments/assets/9aac386a-a5ee-4a27-860c-a7a9803059e4" />
 
 
 # ABCapture: An AI-Powered Tool to Support Adults Working With Children With Autism
