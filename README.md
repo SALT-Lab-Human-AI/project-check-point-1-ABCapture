@@ -69,7 +69,7 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 
 **Checkpoint 2: Prompt-Based Validation & Concept Feedback**
 - **All Members**: Participated in the **Prompting Protocol**, with **each member testing one AI tool** - Notion AI (Manuela), NotebookLM (Jiya), Copilot Studio (Sara), gpt(Rithika).  
-- Sara worked on the **prototype** and Rithika worked on **DESIGN_SPEC.md** (user journeys, task flows, and key screens).  
+- Everyone worked on the **prototype** and Rithika worked on **DESIGN_SPEC.md** (user journeys, task flows, and key screens).  
 
 ---
 **Checkpoint 3: Working Implementation & Live Demo (Planned)**
