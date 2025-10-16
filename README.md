@@ -28,7 +28,6 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 * Collect at least 8 relevant papers and add reflections
 * Draft problem statement, target users, competitive landscape, and concept
 * Prepare short in-class presentation
-* *All team members contribute*
 
 **Checkpoint 2: Prompt-Based Validation & Concept Feedback**
 
@@ -37,7 +36,6 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 * Draft DESIGN\_SPEC.md with user journeys, task flows, and key screens
 * Create lightweight prototype (Figma or sandbox demo)
 * Present prompting evidence, gaps, and refined concept
-* *All team members contribute*
 
 **Checkpoint 3: Working Implementation & Live Demo**
 
@@ -46,7 +44,6 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 * Add source code, config files, architecture diagram, and basic tests
 * Address safety, privacy, and logging considerations
 * Live walk-through demo + technical explanation
-* *All team members contribute*
 
 **Checkpoint 4: Evaluation & Final Report**
 
@@ -55,7 +52,6 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 * Write final report (\~3,500–4,500 words) including intro, related work, method, results, risks, and future work
 * Package final artifacts (deployed link, cleaned data, prompt files, scripts, figures)
 * Present key findings, lessons, and demo highlights
-* *All team members contribute*
 ---
 
 ### Team Contributions
@@ -68,10 +64,15 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 ---
 
 **Checkpoint 2: Prompt-Based Validation & Concept Feedback**
-- **All Members**: Participated in the **Prompting Protocol**, with **each member testing one AI tool** - Notion AI (Manuela), NotebookLM (Jiya), Copilot Studio (Sara), gpt(Rithika).  
-- Everyone worked on the **prototype** and Rithika worked on **DESIGN_SPEC.md** (user journeys, task flows, and key screens).  
+- **All Members**: Participated in the **Prompting Protocol**, with **each member testing one AI tool** - Notion AI (Manuela), NotebookLM (Jiya), Copilot Studio (Sara), gpt(Rithika).
+- **Manuela**: Synthesized the prompting protocol results and summarized the team's conclusions in **Gap Analysis**
+- **Jiya**: Created **Opportunity Framing** based on all above results and findings.
+- **Rithika**: Worked on the task flows and key screens sections of **DESIGN_SPEC.md**
+- **Sara**: Worked on the user journeys section of **DESIGN_SPEC.md**
+- **All Members**: Contributed to the **initial prototype** through a 3-hour collaborative coding session in Replit conducted via Zoom. 
 
 ---
+
 **Checkpoint 3: Working Implementation & Live Demo (Planned)**
 - **Jiya**: Will implement the **Voice-to-Text Incident Logger**, integrating speech-to-text and auto-summary functionality. Will update setup and run instructions in the README.  
 - **Sara**: Will develop the **AI Document/File Organizer** with smart tagging logic, and create the **system architecture diagram** along with privacy & safety documentation.  
