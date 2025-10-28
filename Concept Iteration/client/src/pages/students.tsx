@@ -1,28 +1,98 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { StudentCard } from "@/components/student-card";
 import { AddStudentDialog } from "@/components/add-student-dialog";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
-// TODO: Remove mock data
-const mockStudents = [
-  { id: "1", name: "Emma Johnson", grade: "3", incidentCount: 5, lastIncident: "2 days ago", status: "elevated" as const },
-  { id: "2", name: "Liam Martinez", grade: "4", incidentCount: 3, lastIncident: "1 day ago", status: "calm" as const },
-  { id: "3", name: "Olivia Chen", grade: "3", incidentCount: 7, lastIncident: "Today", status: "critical" as const },
-  { id: "4", name: "Noah Williams", grade: "2", incidentCount: 2, lastIncident: "1 week ago", status: "calm" as const },
-  { id: "5", name: "Ava Rodriguez", grade: "4", incidentCount: 4, lastIncident: "3 days ago", status: "elevated" as const },
-  { id: "6", name: "Sophia Davis", grade: "3", incidentCount: 1, lastIncident: "2 weeks ago", status: "calm" as const },
-];
+type ApiStudent = { id: number; name: string; grade: string | null };
+type ApiIncident = { id: number; studentId: number; date: string; createdAt: string };
 
 export default function Students() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: students = [] } = useQuery<ApiStudent[]>({ queryKey: ["/api/students"] });
+  
+  // Fetch all incidents to calculate counts per student
+  const { data: allIncidents = [] } = useQuery<ApiIncident[]>({ 
+    queryKey: ["/api/incidents"],
+  });
 
-  const filteredStudents = mockStudents.filter((student) =>
-    student.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const addStudent = useMutation({
+    mutationFn: async (student: { name: string; grade: string; notes: string }) => {
+      console.log("Frontend: Adding student:", student);
+      
+      try {
+        const res = await apiRequest("POST", "/api/students", { 
+          name: student.name, 
+          grade: student.grade || null 
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error("Frontend: Server error response:", errorData);
+          throw new Error(errorData.message || "Failed to add student");
+        }
+        
+        const result = await res.json();
+        console.log("Frontend: Student created:", result);
+        return result;
+      } catch (error) {
+        console.error("Frontend: Error in mutation:", error);
+        throw error;
+      }
+    },
+    onSuccess: async (data) => {
+      console.log("Frontend: Mutation successful, invalidating queries");
+      await queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+    },
+    onError: (error) => {
+      console.error("Frontend: Error adding student:", error);
+      alert(`Failed to add student: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    },
+  });
+
+  const filteredStudents = students
+    .map((s) => {
+      // Calculate incident count for this student
+      const studentIncidents = allIncidents.filter(inc => inc.studentId === s.id);
+      const incidentCount = studentIncidents.length;
+      
+      // Calculate last incident date
+      let lastIncident: string | undefined;
+      if (studentIncidents.length > 0) {
+        const sortedIncidents = [...studentIncidents].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        const lastDate = new Date(sortedIncidents[0].createdAt);
+        const now = new Date();
+        const diffDays = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) lastIncident = "Today";
+        else if (diffDays === 1) lastIncident = "Yesterday";
+        else if (diffDays < 7) lastIncident = `${diffDays} days ago`;
+        else lastIncident = lastDate.toLocaleDateString();
+      }
+      
+      // Calculate status based on incident frequency
+      const status: "calm" | "elevated" | "critical" = 
+        incidentCount > 5 ? "critical" : 
+        incidentCount > 2 ? "elevated" : 
+        "calm";
+      
+      return {
+        id: String(s.id),
+        name: s.name,
+        grade: s.grade ?? undefined,
+        incidentCount,
+        lastIncident,
+        status,
+      };
+    })
+    .filter((student) => student.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleAddStudent = (student: { name: string; grade: string; notes: string }) => {
-    console.log("Add student:", student);
+    addStudent.mutate(student);
   };
 
   return (

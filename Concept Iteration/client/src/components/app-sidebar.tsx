@@ -18,7 +18,7 @@ import logoUrl from "@assets/Generated Image October 15, 2025 - 2_50PM_176055869
 const teacherMenuItems = [
   {
     title: "Record Incident",
-    url: "/",
+    url: "/record-incident",
     icon: Mic,
   },
   {

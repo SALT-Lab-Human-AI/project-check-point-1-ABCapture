@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,11 +17,7 @@ import { Mic, Send, User, Bot, CheckCircle2, FileText, MessageSquare } from "luc
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ABCFormEdit } from "@/components/abc-form-edit";
 
-const mockStudents = [
-  { id: "1", name: "Emma Johnson", grade: "3" },
-  { id: "2", name: "Liam Martinez", grade: "4" },
-  { id: "3", name: "Olivia Chen", grade: "3" },
-];
+type ApiStudent = { id: number; name: string; grade: string | null };
 
 interface ChatMessage {
   id: string;
@@ -80,6 +78,31 @@ const mockConversation: ChatMessage[] = [
 export default function Chat() {
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
+
+  // Fetch students from API
+  const { data: apiStudents = [] } = useQuery<ApiStudent[]>({ queryKey: ["/api/students"] });
+  const mockStudents = apiStudents.map(s => ({ id: String(s.id), name: s.name, grade: s.grade || "" }));
+
+  // Send chat message mutation
+  const sendMessage = useMutation({
+    mutationFn: async (msgs: ChatMessage[]) => {
+      // Strip out id and timestamp - Groq API only accepts role and content
+      const cleanMessages = msgs.map(({ role, content }) => ({ role, content }));
+      const res = await apiRequest("POST", "/api/chat", { messages: cleanMessages });
+      return await res.json();
+    },
+  });
+
+  // Extract ABC data mutation
+  const extractABC = useMutation({
+    mutationFn: async (msgs: ChatMessage[]) => {
+      // Strip out id and timestamp - Groq API only accepts role and content
+      const cleanMessages = msgs.map(({ role, content }) => ({ role, content }));
+      const res = await apiRequest("POST", "/api/chat/extract-abc", { messages: cleanMessages });
+      return await res.json();
+    },
+  });
   const [inputValue, setInputValue] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [showMockConversation, setShowMockConversation] = useState(false);
@@ -102,8 +125,8 @@ export default function Chat() {
 
   const displayMessages = showMockConversation ? mockConversation : messages;
 
-  const handleSend = () => {
-    if (!inputValue.trim() || !selectedStudent) return;
+  const handleSend = async () => {
+    if (!inputValue.trim() || !selectedStudent || isLoadingResponse) return;
 
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -112,8 +135,53 @@ export default function Chat() {
       timestamp: new Date(),
     };
 
-    setMessages([...messages, newMessage]);
+    const updatedMessages = [...messages, newMessage];
+    setMessages(updatedMessages);
     setInputValue("");
+    setIsLoadingResponse(true);
+
+    try {
+      // Send to Groq API
+      console.log("[Chat] Sending message to API...");
+      const response = await sendMessage.mutateAsync(updatedMessages);
+      console.log("[Chat] Received response from API");
+      
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: response.message,
+        timestamp: new Date(),
+      };
+
+      setMessages([...updatedMessages, assistantMessage]);
+    } catch (error: any) {
+      // Log detailed error information
+      console.error("[Chat] Error details:", {
+        message: error.message,
+        response: error.response,
+        stack: error.stack,
+      });
+      
+      // Extract the actual error message from the API response
+      let errorText = "I apologize, but I encountered an error. Please try again.";
+      
+      if (error.message) {
+        // Use the error message from the backend
+        errorText = error.message;
+      } else if (error.response?.data?.message) {
+        errorText = error.response.data.message;
+      }
+      
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `⚠️ ${errorText}`,
+        timestamp: new Date(),
+      };
+      setMessages([...updatedMessages, errorMessage]);
+    } finally {
+      setIsLoadingResponse(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -147,6 +215,54 @@ export default function Chat() {
     };
     
     setAbcFormData(mockExtractedData);
+  };
+
+  const handleGenerateForm = async () => {
+    if (messages.length === 0) {
+      alert("Please have a conversation first before generating the form.");
+      return;
+    }
+
+    if (messages.length < 3) {
+      alert("The conversation is too short. Please provide more details about the incident before generating the form.");
+      return;
+    }
+
+    try {
+      setIsLoadingResponse(true);
+      console.log("[Chat] Extracting ABC data from conversation...");
+      
+      const extracted = await extractABC.mutateAsync(messages);
+      console.log("[Chat] ABC data extracted successfully:", extracted);
+      
+      const student = mockStudents.find(s => s.id === selectedStudent);
+      setAbcFormData({
+        id: Date.now().toString(),
+        studentName: student?.name || "",
+        date: new Date().toLocaleDateString(),
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        summary: extracted.summary,
+        antecedent: extracted.antecedent,
+        behavior: extracted.behavior,
+        consequence: extracted.consequence,
+        incidentType: extracted.incidentType,
+        functionOfBehavior: extracted.functionOfBehavior,
+        status: "draft",
+      });
+      
+      setActiveTab("form");
+    } catch (error: any) {
+      console.error("[Chat] Form generation error:", {
+        message: error.message,
+        error: error,
+      });
+      
+      // Show specific error message
+      const errorMsg = error.message || "Failed to generate form. Please try again.";
+      alert(`Form Generation Error:\n\n${errorMsg}`);
+    } finally {
+      setIsLoadingResponse(false);
+    }
   };
   
   const handleFormSave = (updatedData: ABCFormData) => {
@@ -337,7 +453,7 @@ export default function Chat() {
                       <p className="text-sm text-muted-foreground mb-4">
                         I have all the information needed. I'll now generate the ABC incident form for your review.
                       </p>
-                      <Button className="w-full" data-testid="button-generate-form" onClick={() => setActiveTab("form")}>
+                      <Button className="w-full" data-testid="button-generate-form" onClick={handleGenerateForm} disabled={isLoadingResponse}>
                         View ABC Form
                       </Button>
                     </Card>
@@ -393,12 +509,18 @@ export default function Chat() {
                 />
                 <Button
                   onClick={handleSend}
-                  disabled={!inputValue.trim() || !selectedStudent}
+                  disabled={!inputValue.trim() || !selectedStudent || isLoadingResponse}
                   data-testid="button-send"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
+              {isLoadingResponse && (
+                <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+                  AI is thinking...
+                </p>
+              )}
               {isRecording && (
                 <p className="text-sm text-destructive mt-2 flex items-center gap-2">
                   <span className="w-2 h-2 bg-destructive rounded-full animate-pulse"></span>

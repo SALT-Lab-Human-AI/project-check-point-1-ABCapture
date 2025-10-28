@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { IncidentHistoryTable } from "@/components/incident-history-table";
+import { IncidentDetailModal } from "@/components/incident-detail-modal";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -8,68 +10,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Loader2 } from "lucide-react";
 
-// TODO: Remove mock data
-const mockStudents = [
-  { id: "1", name: "Emma Johnson", grade: "3", incidentCount: 5, lastIncident: "2 days ago" },
-  { id: "2", name: "Liam Martinez", grade: "4", incidentCount: 3, lastIncident: "1 day ago" },
-  { id: "3", name: "Olivia Chen", grade: "3", incidentCount: 7, lastIncident: "Today" },
-];
-
-const mockIncidents = [
-  {
-    id: "1",
-    studentName: "Emma Johnson",
-    date: "Oct 15, 2025",
-    time: "10:30 AM",
-    incidentType: "Physical Aggression",
-    functionOfBehavior: ["Escape/Avoidance", "Obtain Tangible"],
-    status: "signed" as const,
-  },
-  {
-    id: "2",
-    studentName: "Liam Martinez",
-    date: "Oct 14, 2025",
-    time: "2:15 PM",
-    incidentType: "Verbal Outburst",
-    functionOfBehavior: ["Attention Seeking"],
-    status: "draft" as const,
-  },
-  {
-    id: "3",
-    studentName: "Olivia Chen",
-    date: "Oct 13, 2025",
-    time: "9:45 AM",
-    incidentType: "Property Destruction",
-    functionOfBehavior: ["Sensory Stimulation"],
-    status: "signed" as const,
-  },
-  {
-    id: "4",
-    studentName: "Emma Johnson",
-    date: "Oct 12, 2025",
-    time: "1:20 PM",
-    incidentType: "Verbal Outburst",
-    functionOfBehavior: ["Escape/Avoidance"],
-    status: "signed" as const,
-  },
-  {
-    id: "5",
-    studentName: "Noah Williams",
-    date: "Oct 11, 2025",
-    time: "11:05 AM",
-    incidentType: "Noncompliance",
-    functionOfBehavior: ["Attention Seeking"],
-    status: "signed" as const,
-  },
-];
+type ApiStudent = { id: number; name: string; grade: string | null };
+type ApiIncident = {
+  id: number;
+  studentId: number;
+  date: string;
+  time: string;
+  incidentType: string;
+  functionOfBehavior: string[];
+  status: string;
+  createdAt: string;
+};
 
 export default function History() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedIncident, setSelectedIncident] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  const filteredIncidents = mockIncidents.filter((incident) => {
+  // Fetch students and incidents from API
+  const { data: students = [], isLoading: studentsLoading } = useQuery<ApiStudent[]>({
+    queryKey: ["/api/students"],
+  });
+  
+  const { data: incidents = [], isLoading: incidentsLoading } = useQuery<ApiIncident[]>({
+    queryKey: ["/api/incidents"],
+  });
+
+  // Map incidents to include student names
+  const incidentsWithStudentNames = incidents.map(incident => {
+    const student = students.find(s => s.id === incident.studentId);
+    return {
+      id: String(incident.id),
+      studentName: student?.name || "Unknown Student",
+      date: new Date(incident.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      time: incident.time,
+      incidentType: incident.incidentType,
+      functionOfBehavior: incident.functionOfBehavior,
+      status: incident.status as "signed" | "draft",
+    };
+  });
+
+  // Sort by date (most recent first)
+  const sortedIncidents = [...incidentsWithStudentNames].sort((a, b) => {
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
+    return dateB - dateA;
+  });
+
+  const filteredIncidents = sortedIncidents.filter((incident) => {
     const matchesSearch = incident.studentName
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -77,6 +68,20 @@ export default function History() {
       statusFilter === "all" || incident.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const isLoading = studentsLoading || incidentsLoading;
+
+  const handleViewIncident = (incidentId: string) => {
+    const incident = incidents.find(inc => String(inc.id) === incidentId);
+    if (incident) {
+      const student = students.find(s => s.id === incident.studentId);
+      setSelectedIncident({
+        ...incident,
+        studentName: student?.name || "Unknown Student",
+      });
+      setIsDetailModalOpen(true);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -86,6 +91,12 @@ export default function History() {
           View and manage all recorded incidents
         </p>
       </div>
+
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      )}
 
       <div className="flex gap-4 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
@@ -111,21 +122,39 @@ export default function History() {
         </Select>
       </div>
 
-      {filteredIncidents.length === 0 ? (
-        <div className="text-center py-12 border rounded-lg">
-          <p className="text-muted-foreground">No incidents found.</p>
-        </div>
-      ) : (
+      {!isLoading && (
         <>
-          <IncidentHistoryTable
-            incidents={filteredIncidents}
-            onViewIncident={(id) => console.log("View incident:", id)}
-          />
-          <div className="text-sm text-muted-foreground">
-            Showing {filteredIncidents.length} of {mockIncidents.length} total incidents
-          </div>
+          {filteredIncidents.length === 0 ? (
+            <div className="text-center py-12 border rounded-lg">
+              <p className="text-muted-foreground">
+                {incidents.length === 0 
+                  ? "No incidents recorded yet. Start by recording your first incident!" 
+                  : "No incidents match your search criteria."}
+              </p>
+            </div>
+          ) : (
+            <>
+              <IncidentHistoryTable
+                incidents={filteredIncidents}
+                onViewIncident={handleViewIncident}
+              />
+              <div className="text-sm text-muted-foreground">
+                Showing {filteredIncidents.length} of {incidents.length} total incidents
+              </div>
+            </>
+          )}
         </>
       )}
+
+      {/* Incident Detail Modal */}
+      <IncidentDetailModal
+        incident={selectedIncident}
+        open={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedIncident(null);
+        }}
+      />
     </div>
   );
 }

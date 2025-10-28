@@ -1,4 +1,5 @@
 import { useParams, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,72 +26,44 @@ import {
 } from "recharts";
 import { usePrivacy } from "@/contexts/privacy-context";
 
-// Mock student data
-const mockStudents = [
-  { id: "1", name: "Emma Johnson", grade: "3", incidentCount: 5, lastIncident: "2 days ago", status: "elevated" as const, photoUrl: undefined },
-  { id: "2", name: "Liam Martinez", grade: "4", incidentCount: 3, lastIncident: "1 day ago", status: "calm" as const, photoUrl: undefined },
-  { id: "3", name: "Olivia Chen", grade: "3", incidentCount: 7, lastIncident: "Today", status: "critical" as const, photoUrl: undefined },
-];
-
-// Mock incident data for the student
-const mockRecentIncidents = [
-  {
-    id: "1",
-    date: "Oct 15, 2024",
-    time: "10:30 AM",
-    type: "Physical Aggression",
-    location: "Classroom",
-    summary: "Pushed another student's desk during math",
-  },
-  {
-    id: "2",
-    date: "Oct 13, 2024",
-    time: "2:15 PM",
-    type: "Verbal Outburst",
-    location: "Cafeteria",
-    summary: "Yelled at peer during lunch",
-  },
-  {
-    id: "3",
-    date: "Oct 10, 2024",
-    time: "11:45 AM",
-    type: "Noncompliance",
-    location: "Gym",
-    summary: "Refused to participate in group activity",
-  },
-];
-
-// Mock behavior trend data (last 14 days)
-const behaviorTrendData = [
-  { date: "Oct 1", incidents: 0 },
-  { date: "Oct 2", incidents: 1 },
-  { date: "Oct 3", incidents: 0 },
-  { date: "Oct 4", incidents: 2 },
-  { date: "Oct 5", incidents: 0 },
-  { date: "Oct 6", incidents: 0 },
-  { date: "Oct 7", incidents: 1 },
-  { date: "Oct 8", incidents: 0 },
-  { date: "Oct 9", incidents: 0 },
-  { date: "Oct 10", incidents: 1 },
-  { date: "Oct 11", incidents: 0 },
-  { date: "Oct 12", incidents: 0 },
-  { date: "Oct 13", incidents: 1 },
-  { date: "Oct 14", incidents: 0 },
-];
-
-// Mock behavior type distribution
-const behaviorTypeData = [
-  { type: "Physical Aggression", count: 2 },
-  { type: "Verbal Outburst", count: 1 },
-  { type: "Noncompliance", count: 2 },
-];
+type ApiStudent = { id: number; name: string; grade: string | null; userId: string; createdAt: string; photoUrl?: string };
+type ApiIncident = {
+  id: number;
+  studentId: number;
+  date: string;
+  time: string;
+  summary: string;
+  incidentType: string;
+  location?: string;
+  createdAt: string;
+};
 
 export default function StudentDetail() {
   const { studentId } = useParams();
   const [, setLocation] = useLocation();
   const { blurText, blurInitials } = usePrivacy();
 
-  const student = mockStudents.find((s) => s.id === studentId);
+  // Fetch student data from API
+  const { data: student, isLoading: studentLoading } = useQuery<ApiStudent>({
+    queryKey: ["/api/students", studentId],
+    enabled: !!studentId,
+  });
+
+  // Fetch incidents for this student
+  const { data: incidents = [], isLoading: incidentsLoading } = useQuery<ApiIncident[]>({
+    queryKey: [`/api/incidents?studentId=${studentId}`],
+    enabled: !!studentId,
+  });
+
+  if (studentLoading || incidentsLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="p-8">
+          <p className="text-muted-foreground">Loading student data...</p>
+        </Card>
+      </div>
+    );
+  }
 
   if (!student) {
     return (
@@ -101,6 +74,33 @@ export default function StudentDetail() {
       </div>
     );
   }
+
+  // Calculate incident statistics
+  const incidentCount = incidents.length;
+  const lastIncident = incidents[0] ? new Date(incidents[0].createdAt).toLocaleDateString() : "No incidents";
+  const status = incidentCount > 5 ? "critical" : incidentCount > 2 ? "elevated" : "calm";
+
+  // Calculate behavior trend data (last 14 days)
+  const last14Days = Array.from({ length: 14 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (13 - i));
+    return date.toISOString().split('T')[0];
+  });
+
+  const behaviorTrendData = last14Days.map(date => {
+    const count = incidents.filter(inc => inc.date === date).length;
+    return { date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), incidents: count };
+  });
+
+  // Calculate behavior type distribution
+  const typeCount: Record<string, number> = {};
+  incidents.forEach(inc => {
+    typeCount[inc.incidentType] = (typeCount[inc.incidentType] || 0) + 1;
+  });
+  const behaviorTypeData = Object.entries(typeCount).map(([type, count]) => ({ type, count }));
+
+  // Get recent incidents (last 3)
+  const recentIncidents = incidents.slice(0, 3);
 
   const statusColors = {
     calm: "bg-chart-2",
@@ -152,11 +152,11 @@ export default function StudentDetail() {
                 <h2 className="text-2xl font-bold" data-testid="text-student-name">
                   {displayName}
                 </h2>
-                <Badge variant="outline" className={`${statusColors[student.status]} text-white border-0`}>
-                  {student.status}
+                <Badge variant="outline" className={`${statusColors[status]} text-white border-0`}>
+                  {status}
                 </Badge>
               </div>
-              <p className="text-muted-foreground mb-4">Grade {student.grade}</p>
+              <p className="text-muted-foreground mb-4">Grade {student.grade || 'N/A'}</p>
               <div className="flex gap-3 flex-wrap">
                 <Button
                   onClick={() => setLocation(`/record/${studentId}`)}
@@ -187,7 +187,7 @@ export default function StudentDetail() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-total-incidents">
-              {student.incidentCount}
+              {incidentCount}
             </div>
             <p className="text-xs text-muted-foreground">
               Last 30 days
@@ -226,7 +226,7 @@ export default function StudentDetail() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-last-incident">
-              {student.lastIncident}
+              {lastIncident}
             </div>
             <p className="text-xs text-muted-foreground">
               Most recent event
@@ -318,29 +318,35 @@ export default function StudentDetail() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockRecentIncidents.map((incident) => (
-              <div
-                key={incident.id}
-                className="flex items-start gap-4 p-4 rounded-lg border hover-elevate"
-                data-testid={`incident-${incident.id}`}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline">{incident.type}</Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {incident.location}
-                    </span>
-                  </div>
-                  <p className="text-sm mb-2">{incident.summary}</p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    <span>{incident.date}</span>
-                    <Clock className="h-3 w-3 ml-2" />
-                    <span>{incident.time}</span>
+            {recentIncidents.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No incidents recorded yet</p>
+            ) : (
+              recentIncidents.map((incident) => (
+                <div
+                  key={incident.id}
+                  className="flex items-start gap-4 p-4 rounded-lg border hover-elevate"
+                  data-testid={`incident-${incident.id}`}
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline">{incident.incidentType}</Badge>
+                      {incident.location && (
+                        <span className="text-sm text-muted-foreground">
+                          {incident.location}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm mb-2">{incident.summary}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      <span>{new Date(incident.date).toLocaleDateString()}</span>
+                      <Clock className="h-3 w-3 ml-2" />
+                      <span>{incident.time}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>

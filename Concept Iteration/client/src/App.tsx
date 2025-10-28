@@ -19,6 +19,7 @@ import Students from "@/pages/students";
 import StudentDetail from "@/pages/student-detail";
 import History from "@/pages/history";
 import RecordIncident from "@/pages/record-incident";
+import RecordIncidentSelect from "@/pages/record-incident-select";
 import Settings from "@/pages/settings";
 import ParentDashboard from "@/pages/parent-dashboard";
 
@@ -73,6 +74,7 @@ function Router() {
       <Route path="/students" component={Students} />
       <Route path="/students/:studentId" component={StudentDetail} />
       <Route path="/history" component={History} />
+      <Route path="/record-incident" component={RecordIncidentSelect} />
       <Route path="/record/:studentId" component={RecordIncident} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />

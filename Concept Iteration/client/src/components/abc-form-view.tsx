@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Tag, Target } from "lucide-react";
+import { Calendar, Clock, Tag, Target, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 interface ABCFormData {
@@ -22,9 +22,10 @@ interface ABCFormViewProps {
   data: ABCFormData;
   onSign?: () => void;
   onEdit?: () => void;
+  isSaving?: boolean;
 }
 
-export function ABCFormView({ data, onSign, onEdit }: ABCFormViewProps) {
+export function ABCFormView({ data, onSign, onEdit, isSaving = false }: ABCFormViewProps) {
   return (
     <Card>
       <CardHeader>
@@ -108,13 +109,20 @@ export function ABCFormView({ data, onSign, onEdit }: ABCFormViewProps) {
       {(onSign || onEdit) && data.status === "draft" && (
         <CardFooter className="flex gap-2 justify-end">
           {onEdit && (
-            <Button variant="outline" onClick={onEdit} data-testid="button-edit">
+            <Button variant="outline" onClick={onEdit} disabled={isSaving} data-testid="button-edit">
               Edit
             </Button>
           )}
           {onSign && (
-            <Button onClick={onSign} data-testid="button-sign">
-              Sign & Save
+            <Button onClick={onSign} disabled={isSaving} data-testid="button-sign">
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Sign & Save"
+              )}
             </Button>
           )}
         </CardFooter>

@@ -51,11 +51,13 @@ export const students = pgTable("students", {
 
 export const insertStudentSchema = createInsertSchema(students).omit({
   id: true,
+  userId: true, // userId is set by backend from session, not from frontend
   createdAt: true,
 });
 
 export type InsertStudent = z.infer<typeof insertStudentSchema>;
 export type Student = typeof students.$inferSelect;
+export const updateStudentSchema = insertStudentSchema.partial();
 
 // Parent-Student relationship table
 export const parentStudents = pgTable("parent_students", {
@@ -120,6 +122,9 @@ export const incidents = pgTable("incidents", {
   consequence: text("consequence").notNull(),
   incidentType: text("incident_type").notNull(),
   functionOfBehavior: text("function_of_behavior").array().notNull(),
+  location: text("location"),
+  signature: text("signature"),
+  signedAt: timestamp("signed_at"),
   status: text("status").notNull().default("draft"), // draft, signed
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -127,9 +132,11 @@ export const incidents = pgTable("incidents", {
 
 export const insertIncidentSchema = createInsertSchema(incidents).omit({
   id: true,
+  userId: true, // userId is set by backend from session, not from frontend
   createdAt: true,
   updatedAt: true,
 });
 
 export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 export type Incident = typeof incidents.$inferSelect;
+export const updateIncidentSchema = insertIncidentSchema.partial();
