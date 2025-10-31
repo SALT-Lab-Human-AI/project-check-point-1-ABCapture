@@ -21,17 +21,10 @@ export const users = pgTable("users", {
   password: varchar("password").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
-<<<<<<< HEAD
   role: varchar("role").notNull(), // "teacher" only (parent role removed)
-  photoUrl: varchar("photo_url"), // Profile photo URL (work in progress)
-  emailNotifications: varchar("email_notifications"), // Email notification preferences (work in progress)
-  draftReminders: varchar("draft_reminders"), // Draft reminder settings (work in progress)
-=======
-  role: varchar("role").notNull(), // "teacher" or "parent"
   photoUrl: text("photo_url"),
   emailNotifications: varchar("email_notifications").default('true'),
   draftReminders: varchar("draft_reminders").default('true'),
->>>>>>> b88510c92e5cbfec91886a6b86ad85633cedd12b
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -127,8 +127,10 @@ async function importParents() {
         const existingRelationship = await db
           .select()
           .from(parentStudents)
-          .where(eq(parentStudents.parentId, parentId))
-          .where(eq(parentStudents.studentId, studentId))
+          .where(and(
+            eq(parentStudents.parentId, parentId),
+            eq(parentStudents.studentId, studentId)
+          ))
           .limit(1);
         
         if (existingRelationship.length > 0) {

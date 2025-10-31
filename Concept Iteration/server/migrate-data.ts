@@ -48,7 +48,7 @@ async function migrate() {
       WHERE role = 'parent'
     `);
     
-    if (parentUsers.rowCount > 0) {
+    if (parentUsers.rowCount && parentUsers.rowCount > 0) {
       console.log(`  Found ${parentUsers.rowCount} parent users to migrate`);
       
       for (const parentUser of parentUsers.rows) {
