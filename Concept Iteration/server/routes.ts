@@ -1,6 +1,9 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { parents, parentStudents } from "@shared/schema";
+import { eq, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { insertUserSchema, updateUserSchema, loginSchema, insertStudentSchema, updateStudentSchema, insertIncidentSchema, updateIncidentSchema } from "@shared/schema";
@@ -138,6 +141,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const id = Number(req.params.id);
     const ok = await storage.deleteStudent(id, userId);
     res.json({ success: ok });
+  });
+
+  // Get parents for a specific student
+  app.get("/api/students/:id/parents", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      const studentId = Number(req.params.id);
+      
+      // Verify student belongs to this user
+      const student = await storage.getStudent(studentId, userId);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      
+      // Fetch parents for this student
+      const result = await db.select({
+        id: parents.id,
+        email: parents.email,
+        firstName: parents.firstName,
+        lastName: parents.lastName,
+      })
+      .from(parents)
+      .innerJoin(parentStudents, eq(parents.id, parentStudents.parentId))
+      .where(eq(parentStudents.studentId, studentId));
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching parents:", error);
+      res.status(500).json({ message: "Failed to fetch parents" });
+    }
   });
 
   // Incidents

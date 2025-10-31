@@ -11,8 +11,20 @@ import {
   TrendingDown,
   Calendar,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Mail,
+  Users,
+  Share2
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 import {
   BarChart,
   Bar,
@@ -37,11 +49,19 @@ type ApiIncident = {
   location?: string;
   createdAt: string;
 };
+type ApiParent = {
+  id: number;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+};
 
 export default function StudentDetail() {
   const { studentId } = useParams();
   const [, setLocation] = useLocation();
   const { blurText, blurInitials } = usePrivacy();
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedIncident, setSelectedIncident] = useState<ApiIncident | null>(null);
 
   // Fetch student data from API
   const { data: student, isLoading: studentLoading } = useQuery<ApiStudent>({
@@ -55,7 +75,13 @@ export default function StudentDetail() {
     enabled: !!studentId,
   });
 
-  if (studentLoading || incidentsLoading) {
+  // Fetch parents for this student
+  const { data: parents = [], isLoading: parentsLoading } = useQuery<ApiParent[]>({
+    queryKey: [`/api/students/${studentId}/parents`],
+    enabled: !!studentId,
+  });
+
+  if (studentLoading || incidentsLoading || parentsLoading) {
     return (
       <div className="flex items-center justify-center h-full">
         <Card className="p-8">
@@ -176,6 +202,139 @@ export default function StudentDetail() {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Parent Information Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-muted-foreground" />
+              <CardTitle>Parent Information</CardTitle>
+            </div>
+            <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" disabled={incidents.length === 0}>
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share Incident with Parent
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Share Incident with Parent</DialogTitle>
+                  <DialogDescription>
+                    Select an incident to share with {displayName}'s parent(s) via email.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <h4 className="text-sm font-semibold mb-3">Select Incident</h4>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {incidents.map((incident) => (
+                        <div
+                          key={incident.id}
+                          onClick={() => setSelectedIncident(incident)}
+                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                            selectedIncident?.id === incident.id
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {incident.incidentType}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(incident.date).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-sm">{incident.summary}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {selectedIncident && (
+                    <div className="border-t pt-4">
+                      <h4 className="text-sm font-semibold mb-3">Recipients</h4>
+                      {parents.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No parents linked to this student yet.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {parents.map((parent) => (
+                            <div key={parent.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+                              <Mail className="h-4 w-4 text-muted-foreground" />
+                              <div className="flex-1">
+                                <p className="text-sm font-medium">
+                                  {parent.firstName} {parent.lastName}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{parent.email}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-end gap-2 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShareDialogOpen(false);
+                        setSelectedIncident(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      disabled={!selectedIncident || parents.length === 0}
+                      onClick={() => {
+                        // TODO: Implement email functionality
+                        console.log('Sharing incident:', selectedIncident?.id, 'with parents:', parents);
+                        setShareDialogOpen(false);
+                        setSelectedIncident(null);
+                      }}
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Share via Email
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {parents.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No parents linked to this student yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {parents.map((parent) => (
+                <div key={parent.id} className="flex items-center gap-3 p-3 rounded-lg border">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {(parent.firstName?.[0] || '') + (parent.lastName?.[0] || '')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">
+                      {parent.firstName} {parent.lastName}
+                    </p>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Mail className="h-3 w-3" />
+                      <span>{parent.email}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

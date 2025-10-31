@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, serial, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, serial, integer, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -94,8 +94,8 @@ export type Parent = typeof parents.$inferSelect;
 // Parent-Student relationship table (links parents to students)
 export const parentStudents = pgTable("parent_students", {
   id: serial("id").primaryKey(),
-  parentId: serial("parent_id").notNull().references(() => parents.id, { onDelete: "cascade" }),
-  studentId: serial("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+  parentId: integer("parent_id").notNull().references(() => parents.id, { onDelete: "cascade" }),
+  studentId: integer("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
