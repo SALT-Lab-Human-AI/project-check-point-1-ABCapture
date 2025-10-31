@@ -69,7 +69,14 @@ function Router() {
   // Teacher routes (default)
   return (
     <Switch>
-      <Route path="/" component={Chat} />
+      <Route path="/" component={RecordIncidentSelect} />
+      <Route path="/signup">
+        <Redirect to="/" />
+      </Route>
+      <Route path="/login">
+        <Redirect to="/" />
+      </Route>
+      <Route path="/chat" component={Chat} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/students" component={Students} />
       <Route path="/students/:studentId" component={StudentDetail} />

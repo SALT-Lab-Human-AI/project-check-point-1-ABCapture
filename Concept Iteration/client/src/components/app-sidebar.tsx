@@ -71,7 +71,8 @@ export function AppSidebar() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       queryClient.clear();
       
-      // The useAuth hook will detect the change and redirect to login
+      // Force a full page reload to login page
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
     }
