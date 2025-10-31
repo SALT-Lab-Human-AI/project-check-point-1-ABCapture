@@ -21,7 +21,10 @@ export const users = pgTable("users", {
   password: varchar("password").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
-  role: varchar("role").notNull(), // "teacher" or "parent"
+  role: varchar("role").notNull(), // "teacher" only (parent role removed)
+  photoUrl: varchar("photo_url"), // Profile photo URL (work in progress)
+  emailNotifications: varchar("email_notifications"), // Email notification preferences (work in progress)
+  draftReminders: varchar("draft_reminders"), // Draft reminder settings (work in progress)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -59,11 +62,30 @@ export type InsertStudent = z.infer<typeof insertStudentSchema>;
 export type Student = typeof students.$inferSelect;
 export const updateStudentSchema = insertStudentSchema.partial();
 
-// Parent-Student relationship table
+// Parents table (for tracking parents without login capability)
+export const parents = pgTable("parents", {
+  id: serial("id").primaryKey(),
+  email: varchar("email").notNull(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertParentSchema = createInsertSchema(parents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertParent = z.infer<typeof insertParentSchema>;
+export type Parent = typeof parents.$inferSelect;
+
+// Parent-Student relationship table (links parents to students)
 export const parentStudents = pgTable("parent_students", {
   id: serial("id").primaryKey(),
-  parentId: varchar("parent_id").notNull().references(() => users.id),
-  studentId: serial("student_id").notNull().references(() => students.id),
+  parentId: serial("parent_id").notNull().references(() => parents.id, { onDelete: "cascade" }),
+  studentId: serial("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
