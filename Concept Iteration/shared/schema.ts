@@ -22,6 +22,9 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   role: varchar("role").notNull(), // "teacher" or "parent"
+  photoUrl: text("photo_url"),
+  emailNotifications: varchar("email_notifications").default('true'),
+  draftReminders: varchar("draft_reminders").default('true'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -32,12 +35,22 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
+// Very permissive schema for profile updates - accepts any optional strings
+export const updateUserSchema = z.object({
+  firstName: z.string().optional().nullable(),
+  lastName: z.string().optional().nullable(),
+  photoUrl: z.string().optional().nullable(),
+  emailNotifications: z.string().optional().nullable(),
+  draftReminders: z.string().optional().nullable(),
+}).passthrough(); // Allow any additional fields
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateUser = z.infer<typeof updateUserSchema>;
 export type LoginCredentials = z.infer<typeof loginSchema>;
 export type User = typeof users.$inferSelect;
 

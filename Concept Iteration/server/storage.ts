@@ -1,4 +1,4 @@
-import { users, students, incidents, type User, type InsertUser, type Student, type InsertStudent, type Incident, type InsertIncident } from "@shared/schema";
+import { users, students, incidents, type User, type InsertUser, type UpdateUser, type Student, type InsertStudent, type Incident, type InsertIncident } from "@shared/schema";
 import { db } from "./db";
 import { and, desc, eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -8,6 +8,8 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, data: UpdateUser): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
   authenticateUser(email: string, password: string): Promise<User | null>;
   // Student operations
   listStudents(userId: string): Promise<Student[]>;
@@ -46,6 +48,25 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return user;
+  }
+
+  async updateUser(id: string, data: UpdateUser): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    try {
+      await db.delete(users).where(eq(users.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return false;
+    }
   }
 
   async authenticateUser(email: string, password: string): Promise<User | null> {

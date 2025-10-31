@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
-import { insertUserSchema, loginSchema, insertStudentSchema, updateStudentSchema, insertIncidentSchema, updateIncidentSchema } from "@shared/schema";
+import { insertUserSchema, updateUserSchema, loginSchema, insertStudentSchema, updateStudentSchema, insertIncidentSchema, updateIncidentSchema } from "@shared/schema";
 import { sendChatMessage, extractABCData, type ChatMessage } from "./groq";
 
 // Session middleware
@@ -294,6 +294,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Update user profile
+  app.patch("/api/auth/user", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      console.log("[Update User] Request body keys:", Object.keys(req.body));
+      console.log("[Update User] photoUrl length:", req.body.photoUrl?.length);
+      
+      // Manual validation instead of Zod to avoid pattern issues
+      const data: { firstName?: string; lastName?: string; photoUrl?: string; emailNotifications?: string; draftReminders?: string } = {};
+      
+      if (req.body.firstName !== undefined && req.body.firstName !== null) {
+        data.firstName = String(req.body.firstName);
+      }
+      if (req.body.lastName !== undefined && req.body.lastName !== null) {
+        data.lastName = String(req.body.lastName);
+      }
+      if (req.body.photoUrl !== undefined && req.body.photoUrl !== null) {
+        data.photoUrl = String(req.body.photoUrl);
+      }
+      if (req.body.emailNotifications !== undefined && req.body.emailNotifications !== null) {
+        data.emailNotifications = String(req.body.emailNotifications);
+      }
+      if (req.body.draftReminders !== undefined && req.body.draftReminders !== null) {
+        data.draftReminders = String(req.body.draftReminders);
+      }
+      
+      console.log("[Update User] Processed data:", { ...data, photoUrl: data.photoUrl ? `${data.photoUrl.substring(0, 50)}... (${data.photoUrl.length} chars)` : undefined });
+      
+      const updatedUser = await storage.updateUser(userId, data);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Return user without password
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("[Update User] Error:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.split('\n').slice(0, 3),
+      });
+      
+      res.status(400).json({ message: error.message || "Failed to update user" });
+    }
+  });
+
+  // Delete user account
+  app.delete("/api/auth/user", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      
+      const deleted = await storage.deleteUser(userId);
+      
+      if (!deleted) {
+        return res.status(500).json({ message: "Failed to delete account" });
+      }
+
+      // Destroy session after deleting account
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session:", err);
+        }
+      });
+
+      res.json({ message: "Account deleted successfully" });
+    } catch (error: any) {
+      console.error("[Delete User] Error:", error);
+      res.status(400).json({ message: error.message || "Failed to delete account" });
     }
   });
 
