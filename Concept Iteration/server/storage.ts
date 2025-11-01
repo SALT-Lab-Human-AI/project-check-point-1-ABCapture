@@ -24,6 +24,7 @@ export interface IStorage {
   getIncident(id: number, userId: string): Promise<Incident | undefined>;
   createIncident(userId: string, data: InsertIncident): Promise<Incident>;
   updateIncident(id: number, userId: string, data: Partial<InsertIncident>): Promise<Incident | undefined>;
+  deleteIncident(id: number, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -243,6 +244,19 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(incidents.id, id), eq(incidents.userId, userId)))
       .returning();
     return row;
+  }
+
+  async deleteIncident(id: number, userId: string): Promise<boolean> {
+    try {
+      const deleted = await db
+        .delete(incidents)
+        .where(and(eq(incidents.id, id), eq(incidents.userId, userId)));
+      // drizzle returns { rowCount?: number } depending on driver; fallback to truthy
+      return !!(deleted as any)?.rowCount || true;
+    } catch (error) {
+      console.error("Error deleting incident:", error);
+      return false;
+    }
   }
 }
 

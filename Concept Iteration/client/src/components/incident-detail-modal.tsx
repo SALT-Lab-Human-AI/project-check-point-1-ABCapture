@@ -15,7 +15,8 @@ import {
   Download,
   Printer,
   X,
-  FileSignature
+  FileSignature,
+  Trash2
 } from "lucide-react";
 
 interface IncidentDetailModalProps {
@@ -41,9 +42,10 @@ interface IncidentDetailModalProps {
   open: boolean;
   onClose: () => void;
   onSign?: (incidentId: number, signature: string) => void;
+  onDelete?: (incidentId: number) => void;
 }
 
-export function IncidentDetailModal({ incident, open, onClose, onSign }: IncidentDetailModalProps) {
+export function IncidentDetailModal({ incident, open, onClose, onSign, onDelete }: IncidentDetailModalProps) {
   const [signature, setSignature] = useState("");
   
   if (!incident) return null;
@@ -303,25 +305,40 @@ Status: ${incident.status}
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose}>
-              <X className="h-4 w-4 mr-2" />
-              Close
-            </Button>
-            {incident.status === 'draft' && onSign && (
+          <div className="flex justify-between items-center pt-4">
+            {incident.status === 'draft' && onDelete && (
               <Button 
+                variant="destructive"
                 onClick={() => {
-                  if (signature.trim()) {
-                    onSign(incident.id, signature.trim());
-                    setSignature("");
+                  if (window.confirm("Are you sure you want to delete this incident? This action cannot be undone.")) {
+                    onDelete(incident.id);
                   }
                 }}
-                disabled={!signature.trim()}
               >
-                <FileSignature className="h-4 w-4 mr-2" />
-                Sign Incident
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
               </Button>
             )}
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" onClick={onClose}>
+                <X className="h-4 w-4 mr-2" />
+                Close
+              </Button>
+              {incident.status === 'draft' && onSign && (
+                <Button 
+                  onClick={() => {
+                    if (signature.trim()) {
+                      onSign(incident.id, signature.trim());
+                      setSignature("");
+                    }
+                  }}
+                  disabled={!signature.trim()}
+                >
+                  <FileSignature className="h-4 w-4 mr-2" />
+                  Sign Incident
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>

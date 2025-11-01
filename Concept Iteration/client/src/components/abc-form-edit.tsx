@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, Clock, X, PenTool, Check } from "lucide-react";
+import { Calendar, Clock, X, PenTool, Check, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 interface ABCFormData {
@@ -35,6 +35,7 @@ interface ABCFormEditProps {
   data: ABCFormData;
   onSave: (data: ABCFormData) => void;
   onCancel: () => void;
+  onDelete?: () => void;
 }
 
 const incidentTypes = [
@@ -55,7 +56,7 @@ const behaviorFunctions = [
   "Communication",
 ];
 
-export function ABCFormEdit({ data, onSave, onCancel }: ABCFormEditProps) {
+export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditProps) {
   const [formData, setFormData] = useState(data);
   const [selectedFunctions, setSelectedFunctions] = useState<string[]>(
     data.functionOfBehavior
@@ -298,15 +299,28 @@ export function ABCFormEdit({ data, onSave, onCancel }: ABCFormEditProps) {
             )}
           </div>
         </CardContent>
-        <CardFooter className="flex gap-2 justify-end">
-          <Button type="button" variant="outline" onClick={onCancel} data-testid="button-cancel-edit">
-            {formData.status === "signed" ? "Close" : "Cancel"}
-          </Button>
-          {formData.status !== "signed" && (
-            <Button type="submit" data-testid="button-save-edit">
-              Save Changes
+        <CardFooter className="flex gap-2 justify-between">
+          {formData.status === "draft" && onDelete && (
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={onDelete}
+              data-testid="button-delete-incident"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
             </Button>
           )}
+          <div className="flex gap-2 ml-auto">
+            <Button type="button" variant="outline" onClick={onCancel} data-testid="button-cancel-edit">
+              {formData.status === "signed" ? "Close" : "Cancel"}
+            </Button>
+            {formData.status !== "signed" && (
+              <Button type="submit" data-testid="button-save-edit">
+                Save Changes
+              </Button>
+            )}
+          </div>
         </CardFooter>
       </form>
     </Card>

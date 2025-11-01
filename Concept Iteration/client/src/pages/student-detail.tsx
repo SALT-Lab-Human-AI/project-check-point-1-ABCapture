@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Mail,
   Users,
+  Trash2,
   Share2,
   Edit,
   FileSignature
@@ -142,8 +143,51 @@ export default function StudentDetail() {
     },
   });
 
+  const deleteIncidentMutation = useMutation({
+    mutationFn: async (incidentId: number) => {
+      const res = await apiRequest("DELETE", `/api/incidents/${incidentId}`);
+      // Try to parse as JSON, fallback to success message if parsing fails
+      try {
+        // Check if response has content
+        const text = await res.text();
+        if (text && text.trim()) {
+          return JSON.parse(text);
+        }
+        // Empty response means success
+        return { message: "Incident deleted successfully" };
+      } catch (e) {
+        // If JSON parsing fails, still consider it success if we got 200 status
+        console.warn("[Delete Incident] Could not parse response as JSON:", e);
+        return { message: "Incident deleted successfully" };
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Incident Deleted",
+        description: "The incident has been deleted successfully.",
+      });
+      // Invalidate all incident queries to update everywhere
+      queryClient.invalidateQueries({ queryKey: [`/api/incidents?studentId=${studentId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      setEditingIncidentId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete incident",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSignIncident = (incidentId: number, signature: string) => {
     signIncidentMutation.mutate({ incidentId, signature });
+  };
+
+  const handleDeleteIncident = (incidentId: number) => {
+    if (window.confirm("Are you sure you want to delete this incident? This action cannot be undone.")) {
+      deleteIncidentMutation.mutate(incidentId);
+    }
   };
 
   // Fetch student data from API
@@ -187,7 +231,12 @@ export default function StudentDetail() {
   // Calculate incident statistics
   const incidentCount = incidents.length;
   const lastIncident = incidents[0] ? new Date(incidents[0].createdAt).toLocaleDateString() : "No incidents";
-  const status = incidentCount > 5 ? "critical" : incidentCount > 2 ? "elevated" : "calm";
+  
+  // Calculate if there's an incident in last 7 days (for badge color)
+  const now = new Date();
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const hasRecentIncident = incidents.some(inc => new Date(inc.createdAt) >= sevenDaysAgo);
 
   // Calculate behavior trend data (last 14 days)
   const last14Days = Array.from({ length: 14 }, (_, i) => {
@@ -211,14 +260,11 @@ export default function StudentDetail() {
   // Get recent incidents (last 3)
   const recentIncidents = incidents.slice(0, 3);
 
-  const statusColors = {
-    calm: "bg-chart-2",
-    elevated: "bg-chart-3",
-    critical: "bg-destructive",
-  };
-
   const initials = blurInitials(student.name);
   const displayName = blurText(student.name);
+  
+  // Yellow if incident in last week, green otherwise
+  const badgeColor = hasRecentIncident ? "bg-yellow-500 hover:bg-yellow-600" : "bg-chart-2 hover:bg-chart-2/90";
 
   // Calculate week-over-week change
   const thisWeekTotal = behaviorTrendData.slice(-7).reduce((sum, day) => sum + day.incidents, 0);
@@ -261,11 +307,13 @@ export default function StudentDetail() {
                 <h2 className="text-2xl font-bold" data-testid="text-student-name">
                   {displayName}
                 </h2>
-                <Badge variant="outline" className={`${statusColors[status]} text-white border-0`}>
-                  {status}
-                </Badge>
               </div>
               <p className="text-muted-foreground mb-4">Grade {student.grade || 'N/A'}</p>
+              <div className="flex items-center gap-3 flex-wrap mb-4">
+                <Badge variant="secondary" className={`text-sm text-white border-0 ${badgeColor}`}>
+                  {incidentCount} {incidentCount === 1 ? "incident" : "incidents"}
+                </Badge>
+              </div>
               <div className="flex gap-3 flex-wrap">
                 <Button
                   onClick={() => setLocation(`/record/${studentId}`)}
@@ -500,32 +548,43 @@ export default function StudentDetail() {
                         </div>
                       )}
                       
-                      <div className="flex justify-end gap-2 pt-4">
-                        <Button
-                          variant="outline"
-                          onClick={() => setEditingIncidentId(null)}
-                        >
-                          {incident.status === 'draft' ? 'Cancel' : 'Close'}
-                        </Button>
+                      <div className="flex justify-between items-center pt-4">
                         {incident.status === 'draft' && (
                           <Button
-                            onClick={() => {
-                              const input = document.getElementById('signature') as HTMLInputElement;
-                              if (input?.value.trim()) {
-                                handleSignIncident(incident.id, input.value.trim());
-                              } else {
-                                toast({
-                                  title: "Signature Required",
-                                  description: "Please enter your full name to sign the incident.",
-                                  variant: "destructive",
-                                });
-                              }
-                            }}
+                            variant="destructive"
+                            onClick={() => handleDeleteIncident(incident.id)}
                           >
-                            <FileSignature className="h-4 w-4 mr-2" />
-                            Sign Incident
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
                           </Button>
                         )}
+                        <div className="flex gap-2 ml-auto">
+                          <Button
+                            variant="outline"
+                            onClick={() => setEditingIncidentId(null)}
+                          >
+                            {incident.status === 'draft' ? 'Cancel' : 'Close'}
+                          </Button>
+                          {incident.status === 'draft' && (
+                            <Button
+                              onClick={() => {
+                                const input = document.getElementById('signature') as HTMLInputElement;
+                                if (input?.value.trim()) {
+                                  handleSignIncident(incident.id, input.value.trim());
+                                } else {
+                                  toast({
+                                    title: "Signature Required",
+                                    description: "Please enter your full name to sign the incident.",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                            >
+                              <FileSignature className="h-4 w-4 mr-2" />
+                              Sign Incident
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

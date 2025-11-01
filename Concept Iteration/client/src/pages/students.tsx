@@ -83,18 +83,31 @@ export default function Students() {
       return true;
     })
     .map((s) => {
-      // Calculate incident count for this student
-      const studentIncidents = allIncidents.filter(inc => inc.studentId === s.id);
-      const incidentCount = studentIncidents.length;
+      // Get all incidents for this student
+      const allStudentIncidents = allIncidents.filter(inc => inc.studentId === s.id);
       
-      // Calculate last incident date
+      // Calculate date 7 days ago (weekly reset)
+      const now = new Date();
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      // Filter incidents from last 7 days
+      const recentIncidents = allStudentIncidents.filter(inc => {
+        const incidentDate = new Date(inc.createdAt);
+        return incidentDate >= sevenDaysAgo;
+      });
+      
+      // Check if there are any incidents in the last week (for yellow badge)
+      const hasRecentIncident = recentIncidents.length > 0;
+      const allTimeIncidentCount = allStudentIncidents.length;
+      
+      // Calculate last incident date (from all incidents)
       let lastIncident: string | undefined;
-      if (studentIncidents.length > 0) {
-        const sortedIncidents = [...studentIncidents].sort(
+      if (allStudentIncidents.length > 0) {
+        const sortedIncidents = [...allStudentIncidents].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         const lastDate = new Date(sortedIncidents[0].createdAt);
-        const now = new Date();
         const diffDays = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
         
         if (diffDays === 0) lastIncident = "Today";
@@ -103,19 +116,15 @@ export default function Students() {
         else lastIncident = lastDate.toLocaleDateString();
       }
       
-      // Calculate status based on incident frequency
-      const status: "calm" | "elevated" | "critical" = 
-        incidentCount > 5 ? "critical" : 
-        incidentCount > 2 ? "elevated" : 
-        "calm";
-      
       return {
         id: String(s.id),
         name: s.name,
         grade: s.grade ?? undefined,
-        incidentCount,
+        incidentCount: allTimeIncidentCount, // Show total count
+        // Only include all-time count if there are incidents older than 7 days
+        ...(allTimeIncidentCount > recentIncidents.length ? { recentCount: recentIncidents.length } : {}),
         lastIncident,
-        status,
+        hasRecentIncident, // Flag for yellow badge (replaces status)
       };
     })
     .filter((student) => student.name.toLowerCase().includes(searchQuery.toLowerCase()))

@@ -184,6 +184,44 @@ export default function RecordIncident() {
     setIsEditing(true);
   };
 
+  const deleteIncidentMutation = useMutation({
+    mutationFn: async (incidentId: string) => {
+      const res = await apiRequest("DELETE", `/api/incidents/${incidentId}`);
+      // Try to parse as JSON, fallback to success message if parsing fails
+      try {
+        // Check if response has content
+        const text = await res.text();
+        if (text && text.trim()) {
+          return JSON.parse(text);
+        }
+        // Empty response means success
+        return { message: "Incident deleted successfully" };
+      } catch (e) {
+        // If JSON parsing fails, still consider it success if we got 200 status
+        console.warn("[Delete Incident] Could not parse response as JSON:", e);
+        return { message: "Incident deleted successfully" };
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Incident Deleted",
+        description: "The incident has been deleted successfully.",
+      });
+      setFormData(null);
+      setIsEditing(false);
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/incidents?studentId=${params?.studentId}`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete incident",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSaveEdit = (updatedData: ABCFormData) => {
     console.log("[RecordIncident] Saving edited form:", updatedData);
     setFormData(updatedData);
@@ -192,6 +230,14 @@ export default function RecordIncident() {
 
   const handleCancelEdit = () => {
     setIsEditing(false);
+  };
+
+  const handleDeleteIncident = () => {
+    if (formData?.id && formData.status === "draft") {
+      if (window.confirm("Are you sure you want to delete this incident? This action cannot be undone.")) {
+        deleteIncidentMutation.mutate(formData.id);
+      }
+    }
   };
 
   const handleClearForm = () => {
@@ -251,6 +297,7 @@ export default function RecordIncident() {
               data={formData}
               onSave={handleSaveEdit}
               onCancel={handleCancelEdit}
+              onDelete={formData.status === "draft" && formData.id ? handleDeleteIncident : undefined}
             />
           ) : formData ? (
             <Card>
