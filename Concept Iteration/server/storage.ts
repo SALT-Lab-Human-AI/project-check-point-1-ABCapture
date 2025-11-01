@@ -7,9 +7,11 @@ export interface IStorage {
   // User operations for email/password auth
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, data: UpdateUser): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
+  createOrUpdateGoogleUser(profile: { googleId: string; email: string; displayName: string; firstName?: string; lastName?: string }, role: string): Promise<User>;
   authenticateUser(email: string, password: string): Promise<User | null>;
   // Student operations
   listStudents(userId: string): Promise<Student[]>;
@@ -36,8 +38,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(userData: InsertUser): Promise<User> {
-    // Hash password before storing
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    // Hash password before storing (only if password is provided)
+    const hashedPassword = userData.password ? await bcrypt.hash(userData.password, 10) : null;
     
     const [user] = await db
       .insert(users)
@@ -69,11 +71,80 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.googleId, googleId));
+    return user;
+  }
+
+  async createOrUpdateGoogleUser(
+    profile: { googleId: string; email: string; displayName: string; firstName?: string; lastName?: string },
+    role: string
+  ): Promise<User> {
+    try {
+      console.log('[Storage] createOrUpdateGoogleUser called for:', profile.email);
+      
+      // First, check if user exists with this Google ID
+      let user = await this.getUserByGoogleId(profile.googleId);
+      
+      if (user) {
+        // User exists with Google ID, return it
+        console.log('[Storage] User found by Google ID:', user.id);
+        return user;
+      }
+
+      // Check if user exists with this email (for account linking)
+      user = await this.getUserByEmail(profile.email);
+      
+      if (user) {
+        // Link Google account to existing email account
+        console.log('[Storage] Linking Google account to existing user:', user.id);
+        const [updatedUser] = await db
+          .update(users)
+          .set({
+            googleId: profile.googleId,
+            provider: 'google',
+            displayName: profile.displayName,
+          })
+          .where(eq(users.id, user.id))
+          .returning();
+        console.log('[Storage] User updated successfully');
+        return updatedUser;
+      }
+
+      // Create new user with Google OAuth
+      console.log('[Storage] Creating new user with Google OAuth');
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          email: profile.email,
+          googleId: profile.googleId,
+          provider: 'google',
+          displayName: profile.displayName,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          role: role,
+          password: null, // No password for OAuth users
+        })
+        .returning();
+      
+      console.log('[Storage] New user created:', newUser.id);
+      return newUser;
+    } catch (error) {
+      console.error('[Storage] Error in createOrUpdateGoogleUser:', error);
+      throw error;
+    }
+  }
+
   async authenticateUser(email: string, password: string): Promise<User | null> {
     const user = await this.getUserByEmail(email);
     
     if (!user) {
       return null;
+    }
+
+    // Check if user has a password (local auth)
+    if (!user.password) {
+      return null; // OAuth-only user, cannot login with password
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);

@@ -8,6 +8,7 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { insertUserSchema, updateUserSchema, loginSchema, insertStudentSchema, updateStudentSchema, insertIncidentSchema, updateIncidentSchema } from "@shared/schema";
 import { sendChatMessage, extractABCData, type ChatMessage } from "./groq";
+import passport from "./passport";
 
 // Session middleware
 function setupSession(app: Express) {
@@ -57,6 +58,10 @@ export const isAuthenticated = (req: Request, res: Response, next: Function) => 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup session FIRST before any routes
   setupSession(app);
+  
+  // Initialize Passport AFTER session setup
+  app.use(passport.initialize());
+  app.use(passport.session());
   
   // Add middleware to log session status on all requests
   app.use((req, res, next) => {
@@ -314,19 +319,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user route
   app.get("/api/auth/user", isAuthenticated, async (req, res) => {
     try {
+      console.log('[API] /api/auth/user called');
       const userId = (req.session as any).userId;
+      console.log('[API] User ID from session:', userId);
+      
+      if (!userId) {
+        console.error('[API] No userId in session');
+        return res.status(401).json({ message: "No user ID in session" });
+      }
+      
       const user = await storage.getUser(userId);
+      console.log('[API] User fetched from database:', user ? user.id : 'null');
       
       if (!user) {
+        console.error('[API] User not found in database for ID:', userId);
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Return user without password
+      // Return user without password (handle null password for OAuth users)
       const { password, ...userWithoutPassword } = user;
+      console.log('[API] Returning user data (without password)');
       res.json(userWithoutPassword);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+    } catch (error: any) {
+      console.error('[API] Error fetching user:', error);
+      console.error('[API] Error stack:', error.stack);
+      console.error('[API] Error message:', error.message);
+      res.status(500).json({ 
+        message: "Failed to fetch user",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
@@ -401,6 +422,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("[Delete User] Error:", error);
       res.status(400).json({ message: error.message || "Failed to delete account" });
     }
+  });
+
+  // Google OAuth Routes
+  // Initiates the Google OAuth flow
+  app.get("/auth/google", (req, res, next) => {
+    console.log('[OAuth] Initiating Google OAuth flow');
+    passport.authenticate("google", { 
+      scope: ["profile", "email"],
+      session: true 
+    })(req, res, next);
+  });
+
+  // Google OAuth callback - using custom callback to handle errors properly
+  app.get("/auth/google/callback", (req, res, next) => {
+    console.log('[OAuth] Google callback received');
+    
+    // Use custom callback to prevent automatic response and handle errors
+    passport.authenticate("google", (err: Error | null, user: any, info: any) => {
+      console.log('[OAuth] Passport authenticate callback triggered');
+      console.log('[OAuth] Error:', err);
+      console.log('[OAuth] User:', user ? user.id : 'none');
+      console.log('[OAuth] Info:', info);
+      
+      // Handle authentication errors
+      if (err) {
+        console.error('[OAuth] Authentication error:', err);
+        return res.redirect('/login?error=auth_error');
+      }
+      
+      // Handle authentication failure (user not found/created)
+      if (!user) {
+        console.error('[OAuth] No user returned from authentication');
+        return res.redirect('/login?error=auth_failed');
+      }
+      
+      // Manually establish login session
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error('[OAuth] Login error:', loginErr);
+          return res.redirect('/login?error=login_failed');
+        }
+        
+        console.log('[OAuth] User logged in successfully:', user.id);
+        
+        // Set session userId for compatibility with existing auth system
+        (req.session as any).userId = user.id;
+        
+        // Save session before redirecting to prevent race conditions
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('[OAuth] Session save error:', saveErr);
+            return res.redirect('/login?error=session_failed');
+          }
+          
+          console.log('[OAuth] Session saved successfully, redirecting to home');
+          // Only send ONE response - redirect to home page
+          return res.redirect('/');
+        });
+      });
+    })(req, res, next);
   });
 
   // Chatbot routes

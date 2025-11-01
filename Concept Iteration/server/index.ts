@@ -40,12 +40,29 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Global error handler - MUST be after all routes
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+    console.error('[Global Error Handler] Error caught:', err);
+    console.error('[Global Error Handler] Request path:', req.path);
+    console.error('[Global Error Handler] Request method:', req.method);
+    
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
+    // Check if response has already been sent to prevent ERR_CONTENT_LENGTH_MISMATCH
+    if (res.headersSent) {
+      console.error('[Global Error Handler] Headers already sent, cannot send error response');
+      return;
+    }
+
+    // Send error response
+    res.status(status).json({ 
+      message,
+      error: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+    
+    // Log but don't re-throw to prevent server crash
+    console.error('[Global Error Handler] Error handled, response sent');
   });
 
   // importantly only setup vite in development and after

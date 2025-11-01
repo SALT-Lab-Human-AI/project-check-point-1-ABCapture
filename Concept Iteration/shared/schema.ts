@@ -14,17 +14,21 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table with email/password authentication
+// User storage table with email/password and OAuth authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").notNull().unique(),
-  password: varchar("password").notNull(),
+  password: varchar("password"), // Nullable for OAuth-only users
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   role: varchar("role").notNull(), // "teacher" only (parent role removed)
   photoUrl: text("photo_url"),
   emailNotifications: varchar("email_notifications").default('true'),
   draftReminders: varchar("draft_reminders").default('true'),
+  // OAuth fields
+  googleId: varchar("google_id").unique(), // Google OAuth ID
+  provider: varchar("provider").notNull().default("local"), // "local" or "google"
+  displayName: varchar("display_name"), // Full name from OAuth provider
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
