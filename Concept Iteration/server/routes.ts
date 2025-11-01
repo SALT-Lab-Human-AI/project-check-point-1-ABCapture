@@ -169,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Fetch student info
-      const student = await storage.getStudent(incident.studentId);
+      const student = await storage.getStudent(incident.studentId, userId);
       if (!student) {
         return res.status(404).json({ message: "Student not found" });
       }

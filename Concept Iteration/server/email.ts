@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import { createTransport } from 'nodemailer';
 import type { Incident, Student } from '@shared/schema';
 
 // Create reusable transporter
@@ -15,7 +15,7 @@ const createTransporter = () => {
     return null;
   }
 
-  return nodemailer.createTransporter({
+  return createTransport({
     service: emailService,
     auth: {
       user: emailUser,

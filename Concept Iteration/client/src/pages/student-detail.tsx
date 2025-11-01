@@ -38,6 +38,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { usePrivacy } from "@/contexts/privacy-context";
+import { useToast } from "@/hooks/use-toast";
 
 type ApiStudent = { id: number; name: string; grade: string | null; userId: string; createdAt: string; photoUrl?: string };
 type ApiIncident = {
@@ -61,19 +62,23 @@ export default function StudentDetail() {
   const { studentId } = useParams();
   const [, setLocation] = useLocation();
   const { blurText, blurInitials } = usePrivacy();
+  const { toast } = useToast();
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<ApiIncident | null>(null);
+  const [sharedIncidents, setSharedIncidents] = useState<Set<number>>(new Set());
 
   const shareIncidentMutation = useMutation({
     mutationFn: async ({ incidentId, parentEmails }: { incidentId: number; parentEmails: string[] }) => {
       const res = await apiRequest("POST", `/api/incidents/${incidentId}/share`, { parentEmails });
       return await res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       toast({
         title: "Incident Shared",
-        description: data.note || `Incident shared with ${data.recipients} guardian(s)`,
+        description: data.message || `Incident shared with ${data.recipients} guardian(s)`,
       });
+      // Mark this incident as shared
+      setSharedIncidents(prev => new Set(prev).add(variables.incidentId));
       setShareDialogOpen(false);
       setSelectedIncident(null);
     },
@@ -328,7 +333,11 @@ export default function StudentDetail() {
                       }}
                     >
                       <Mail className="h-4 w-4 mr-2" />
-                      {shareIncidentMutation.isPending ? "Sending..." : "Share via Email"}
+                      {shareIncidentMutation.isPending 
+                        ? "Sending..." 
+                        : selectedIncident && sharedIncidents.has(selectedIncident.id)
+                        ? "Sent"
+                        : "Share via Email"}
                     </Button>
                   </div>
                 </div>
