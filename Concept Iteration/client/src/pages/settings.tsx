@@ -263,7 +263,7 @@ export default function Settings() {
               <Label htmlFor="role">Role</Label>
               <Input
                 id="role"
-                value={user?.role === "teacher" ? "Teacher" : "Parent"}
+                value={user?.role === "teacher" ? "Teacher" : "Administrator"}
                 disabled
                 data-testid="input-role"
               />

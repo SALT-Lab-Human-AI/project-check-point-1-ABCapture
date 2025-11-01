@@ -20,7 +20,6 @@ import {
   Clock, 
   AlertTriangle, 
   Plus,
-  Send,
   ArrowUp,
   ArrowDown,
   Loader2
@@ -133,10 +132,10 @@ export default function Dashboard() {
     });
   };
 
-  const handleSendToParent = () => {
+  const handleSendToGuardian = () => {
     toast({
       title: "Report Sent",
-      description: "Parent update report has been sent successfully.",
+      description: "Guardian update report has been sent successfully.",
     });
   };
 
@@ -260,34 +259,6 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Share Reports</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Send formatted summaries to stakeholders
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={handleSendToSpecialist}
-                  data-testid="button-send-specialist"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Summary to Specialist
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={handleSendToParent}
-                  data-testid="button-send-parent"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Parent Update Report
-                </Button>
-              </CardContent>
-            </Card>
           </div>
 
           {totalIncidents === 0 ? (

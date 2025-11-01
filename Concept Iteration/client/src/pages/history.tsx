@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { IncidentHistoryTable } from "@/components/incident-history-table";
 import { IncidentDetailModal } from "@/components/incident-detail-modal";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Select,
   SelectContent,
@@ -25,8 +26,11 @@ type ApiIncident = {
 };
 
 export default function History() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [gradeFilter, setGradeFilter] = useState<string>("all");
+  const [behaviorTypeFilter, setBehaviorTypeFilter] = useState<string>("all");
   const [selectedIncident, setSelectedIncident] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
@@ -39,12 +43,33 @@ export default function History() {
     queryKey: ["/api/incidents"],
   });
 
-  // Map incidents to include student names
-  const incidentsWithStudentNames = incidents.map(incident => {
-    const student = students.find(s => s.id === incident.studentId);
-    return {
-      id: String(incident.id),
-      studentName: student?.name || "Unknown Student",
+  // Get unique grades for filter
+  const uniqueGrades = Array.from(new Set(students.map(s => s.grade).filter(Boolean)));
+  
+  // Get unique behavior types for filter
+  const uniqueBehaviorTypes = Array.from(new Set(incidents.map(i => i.incidentType).filter(Boolean)));
+
+  // Map incidents to include student names and filter by grade and behavior type
+  const incidentsWithStudentNames = incidents
+    .filter(incident => {
+      // Filter by grade if administrator
+      if (user?.role === "administrator" && gradeFilter !== "all") {
+        const student = students.find(s => s.id === incident.studentId);
+        if (student?.grade !== gradeFilter) return false;
+      }
+      
+      // Filter by behavior type
+      if (behaviorTypeFilter !== "all" && incident.incidentType !== behaviorTypeFilter) {
+        return false;
+      }
+      
+      return true;
+    })
+    .map(incident => {
+      const student = students.find(s => s.id === incident.studentId);
+      return {
+        id: String(incident.id),
+        studentName: student?.name || "Unknown Student",
       date: new Date(incident.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       time: incident.time,
       incidentType: incident.incidentType,
@@ -120,6 +145,40 @@ export default function History() {
             <SelectItem value="draft">Draft</SelectItem>
           </SelectContent>
         </Select>
+        
+        {user?.role === "administrator" && uniqueGrades.length > 0 && (
+          <Select value={gradeFilter} onValueChange={setGradeFilter}>
+            <SelectTrigger className="w-[200px]" data-testid="select-grade-filter">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Filter by grade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Grades</SelectItem>
+              {uniqueGrades.map((grade) => (
+                <SelectItem key={grade} value={grade!}>
+                  Grade {grade}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        
+        {uniqueBehaviorTypes.length > 0 && (
+          <Select value={behaviorTypeFilter} onValueChange={setBehaviorTypeFilter}>
+            <SelectTrigger className="w-[200px]" data-testid="select-behavior-filter">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Filter by behavior" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Behaviors</SelectItem>
+              {uniqueBehaviorTypes.map((type) => (
+                <SelectItem key={type} value={type!}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {!isLoading && (
