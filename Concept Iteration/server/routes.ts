@@ -2,8 +2,10 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { sendIncidentEmail } from "./email";
-import { parents, parentStudents } from "@shared/schema";
+import { sendIncidentEmail, sendPasswordResetEmail } from "./email";
+import crypto from "crypto";
+import bcrypt from "bcrypt";
+import { parents, parentStudents, users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -376,6 +378,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ message: "Logged out successfully" });
     });
+  });
+
+  // Request password reset
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Find user by email
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      
+      // Always return success to prevent email enumeration
+      if (!user) {
+        return res.json({ message: "If an account exists with this email, a password reset link has been sent." });
+      }
+
+      // Don't allow password reset for OAuth users
+      if (user.provider !== 'local' || !user.password) {
+        return res.json({ message: "If an account exists with this email, a password reset link has been sent." });
+      }
+
+      // Generate reset token (random string)
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+      // Save token to database
+      await db.update(users)
+        .set({ 
+          resetToken,
+          resetTokenExpiry 
+        })
+        .where(eq(users.id, user.id));
+
+      // Send email
+      const emailResult = await sendPasswordResetEmail(email, resetToken, user.firstName || undefined);
+      
+      if (!emailResult.success) {
+        console.error('[Password Reset] Email send failed:', emailResult.message);
+        return res.status(500).json({ message: "Failed to send reset email. Please try again later." });
+      }
+
+      res.json({ message: "If an account exists with this email, a password reset link has been sent." });
+    } catch (error: any) {
+      console.error("[Password Reset Request] Error:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
+
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      // Find user by reset token
+      const [user] = await db.select()
+        .from(users)
+        .where(eq(users.resetToken, token));
+      
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      // Check if token is expired
+      if (!user.resetTokenExpiry || new Date() > user.resetTokenExpiry) {
+        return res.status(400).json({ message: "Reset token has expired. Please request a new one." });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password and clear reset token
+      await db.update(users)
+        .set({ 
+          password: hashedPassword,
+          resetToken: null,
+          resetTokenExpiry: null 
+        })
+        .where(eq(users.id, user.id));
+
+      res.json({ message: "Password reset successful. You can now log in with your new password." });
+    } catch (error: any) {
+      console.error("[Password Reset] Error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
   });
 
   // Get current user route
