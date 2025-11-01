@@ -47,9 +47,20 @@ export function ChatbotRecordingInterface({
 }: ChatbotRecordingInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: "welcome",
+      id: "instructions",
       role: "assistant",
-      content: `Hi! I'm here to help you document an incident for ${studentName}. Please describe what happened - I'll extract the ABC (Antecedent-Behavior-Consequence) information automatically.`,
+      content: `I need the following information - you can tell me everything at once, either by typing or speaking:
+
+• **Date and Time:** (if different from now)
+• **Location:** Where did the incident occur?
+• **ANTECEDENT:** What happened right before the behavior? What was the child doing/participating in?
+• **BEHAVIOR:** Describe exactly what the child did
+• **CONSEQUENCE:** What happened immediately after?
+• **Duration:** How long did the incident last?
+• **Behavior Hypothesis:** In your opinion, what do you hypothesize the function of the behavior to be?
+  • Select One: Get/Obtain or Escape/Avoid
+  • Select One: Tasks/Demands, Activities, Attention,
+    Settings, People, Objects, or Sensory Stimuli`,
       timestamp: new Date(),
     },
   ]);
@@ -266,8 +277,15 @@ export function ChatbotRecordingInterface({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0">
-        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+        {/* Fixed welcome header */}
+        <div className="p-4 bg-muted/50 border-b flex-shrink-0">
+          <p className="text-sm">
+            Hi! I'm here to help you quickly document a behavioral incident using the ABC (Antecedent-Behavior-Consequence) Data Method. This will only take a few minutes.
+          </p>
+        </div>
+        
+        <ScrollArea className="flex-1 p-4 overflow-auto" ref={scrollRef}>
           <div className="space-y-4">
             {messages.map((message) => (
               <div
@@ -277,20 +295,28 @@ export function ChatbotRecordingInterface({
                 }`}
               >
                 {message.role === "assistant" && (
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarFallback className="bg-primary/10">
                       <Bot className="h-4 w-4 text-primary" />
                     </AvatarFallback>
                   </Avatar>
                 )}
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
+                  className={`flex-1 max-w-md rounded-lg p-3 break-words overflow-hidden ${
                     message.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <div 
+                    className="text-sm" 
+                    style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                    dangerouslySetInnerHTML={{ 
+                      __html: message.content
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n/g, '<br />')
+                    }} 
+                  />
                   <p className="text-xs opacity-70 mt-1">
                     {message.timestamp.toLocaleTimeString("en-US", {
                       hour: "numeric",
@@ -299,7 +325,7 @@ export function ChatbotRecordingInterface({
                   </p>
                 </div>
                 {message.role === "user" && (
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       <User className="h-4 w-4" />
                     </AvatarFallback>
@@ -323,7 +349,7 @@ export function ChatbotRecordingInterface({
         </ScrollArea>
 
         <div className="border-t p-4">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Input
               placeholder="Describe what happened..."
               value={inputValue}
