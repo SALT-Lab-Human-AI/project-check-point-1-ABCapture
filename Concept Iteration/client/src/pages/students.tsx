@@ -66,6 +66,14 @@ export default function Students() {
   // Get unique grades for filter
   const uniqueGrades = Array.from(new Set(students.map(s => s.grade).filter(Boolean)));
 
+  // Helper function to get last name from full name
+  const getLastName = (fullName: string): string => {
+    const nameParts = fullName.trim().split(/\s+/);
+    // If there's only one part, use it as the last name
+    // Otherwise, use the last part as the last name
+    return nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0];
+  };
+
   const filteredStudents = students
     .filter((s) => {
       // Filter by grade if administrator
@@ -110,7 +118,13 @@ export default function Students() {
         status,
       };
     })
-    .filter((student) => student.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    .filter((student) => student.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      // Sort by last name
+      const lastNameA = getLastName(a.name);
+      const lastNameB = getLastName(b.name);
+      return lastNameA.localeCompare(lastNameB, undefined, { sensitivity: 'base' });
+    });
 
   const handleAddStudent = (student: { name: string; grade: string; classroom: string; notes: string }) => {
     addStudent.mutate(student);
