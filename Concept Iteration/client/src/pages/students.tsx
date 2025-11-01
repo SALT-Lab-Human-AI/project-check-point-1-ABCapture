@@ -3,14 +3,24 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { StudentCard } from "@/components/student-card";
 import { AddStudentDialog } from "@/components/add-student-dialog";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ApiStudent = { id: number; name: string; grade: string | null };
 type ApiIncident = { id: number; studentId: number; date: string; createdAt: string };
 
 export default function Students() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [gradeFilter, setGradeFilter] = useState<string>("all");
   const { data: students = [] } = useQuery<ApiStudent[]>({ queryKey: ["/api/students"] });
   
   // Fetch all incidents to calculate counts per student
@@ -19,13 +29,14 @@ export default function Students() {
   });
 
   const addStudent = useMutation({
-    mutationFn: async (student: { name: string; grade: string; notes: string }) => {
+    mutationFn: async (student: { name: string; grade: string; classroom: string; notes: string }) => {
       console.log("Frontend: Adding student:", student);
       
       try {
         const res = await apiRequest("POST", "/api/students", { 
           name: student.name, 
-          grade: student.grade || null 
+          grade: student.grade || null,
+          classroom: student.classroom || null
         });
         
         if (!res.ok) {
@@ -52,7 +63,17 @@ export default function Students() {
     },
   });
 
+  // Get unique grades for filter
+  const uniqueGrades = Array.from(new Set(students.map(s => s.grade).filter(Boolean)));
+
   const filteredStudents = students
+    .filter((s) => {
+      // Filter by grade if administrator
+      if (user?.role === "administrator" && gradeFilter !== "all") {
+        return s.grade === gradeFilter;
+      }
+      return true;
+    })
     .map((s) => {
       // Calculate incident count for this student
       const studentIncidents = allIncidents.filter(inc => inc.studentId === s.id);
@@ -91,7 +112,7 @@ export default function Students() {
     })
     .filter((student) => student.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const handleAddStudent = (student: { name: string; grade: string; notes: string }) => {
+  const handleAddStudent = (student: { name: string; grade: string; classroom: string; notes: string }) => {
     addStudent.mutate(student);
   };
 
@@ -107,15 +128,36 @@ export default function Students() {
         <AddStudentDialog onAddStudent={handleAddStudent} />
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search students..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-          data-testid="input-search-students"
-        />
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search students..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+            data-testid="input-search-students"
+          />
+        </div>
+        
+        {user?.role === "administrator" && uniqueGrades.length > 0 && (
+          <div className="w-64">
+            <Select value={gradeFilter} onValueChange={setGradeFilter}>
+              <SelectTrigger data-testid="select-grade-filter">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by grade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Grades</SelectItem>
+                {uniqueGrades.map((grade) => (
+                  <SelectItem key={grade} value={grade!}>
+                    Grade {grade}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {filteredStudents.length === 0 ? (

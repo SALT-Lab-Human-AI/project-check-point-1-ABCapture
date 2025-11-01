@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
+import { sendIncidentEmail } from "./email";
 import { parents, parentStudents } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import session from "express-session";
@@ -148,6 +149,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const id = Number(req.params.id);
     const ok = await storage.deleteStudent(id, userId);
     res.json({ success: ok });
+  });
+
+  // Share incident with guardians via email
+  app.post("/api/incidents/:id/share", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      const incidentId = Number(req.params.id);
+      const { parentEmails } = req.body;
+
+      if (!parentEmails || !Array.isArray(parentEmails) || parentEmails.length === 0) {
+        return res.status(400).json({ message: "No guardian emails provided" });
+      }
+
+      // Fetch the incident (with userId to verify ownership)
+      const incident = await storage.getIncident(incidentId, userId);
+      if (!incident) {
+        return res.status(404).json({ message: "Incident not found" });
+      }
+
+      // Fetch student info
+      const student = await storage.getStudent(incident.studentId);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      // Get teacher's email from session
+      const teacher = await storage.getUser(userId);
+      const teacherEmail = teacher?.email;
+
+      // Send email to guardians (with teacher's email as Reply-To)
+      const emailResult = await sendIncidentEmail(parentEmails, incident, student, teacherEmail);
+
+      if (!emailResult.success) {
+        return res.status(500).json({ message: emailResult.message });
+      }
+
+      res.json({ 
+        message: emailResult.message,
+        recipients: parentEmails.length
+      });
+    } catch (error: any) {
+      console.error("Error sharing incident:", error);
+      res.status(500).json({ message: "Failed to share incident" });
+    }
   });
 
   // Get parents for a specific student

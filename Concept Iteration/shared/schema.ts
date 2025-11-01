@@ -21,7 +21,7 @@ export const users = pgTable("users", {
   password: varchar("password"), // Nullable for OAuth-only users
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
-  role: varchar("role").notNull(), // "teacher" only (parent role removed)
+  role: varchar("role").notNull(), // "teacher" or "administrator"
   photoUrl: text("photo_url"),
   emailNotifications: varchar("email_notifications").default('true'),
   draftReminders: varchar("draft_reminders").default('true'),

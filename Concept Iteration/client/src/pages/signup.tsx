@@ -14,7 +14,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState<"teacher" | "parent">("teacher");
+  const [role, setRole] = useState<"teacher" | "administrator">("teacher");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -117,13 +117,13 @@ export default function Signup() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Account Type</Label>
-              <Select value={role} onValueChange={(value: "teacher" | "parent") => setRole(value)}>
+              <Select value={role} onValueChange={(value: "teacher" | "administrator") => setRole(value)}>
                 <SelectTrigger id="role" data-testid="select-role">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="teacher">Teacher</SelectItem>
-                  <SelectItem value="parent">Parent</SelectItem>
+                  <SelectItem value="administrator">Administrator</SelectItem>
                 </SelectContent>
               </Select>
             </div>

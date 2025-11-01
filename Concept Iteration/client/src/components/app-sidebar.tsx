@@ -43,11 +43,21 @@ const teacherMenuItems = [
   },
 ];
 
-const parentMenuItems = [
+const administratorMenuItems = [
   {
-    title: "My Child's Dashboard",
-    url: "/",
+    title: "Dashboard",
+    url: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "All Students",
+    url: "/students",
+    icon: Users,
+  },
+  {
+    title: "All Incidents",
+    url: "/history",
+    icon: Clock,
   },
   {
     title: "Settings",
@@ -60,7 +70,7 @@ export function AppSidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
   
-  const menuItems = user?.role === "parent" ? parentMenuItems : teacherMenuItems;
+  const menuItems = user?.role === "administrator" ? administratorMenuItems : teacherMenuItems;
 
   const handleLogout = async () => {
     try {
@@ -79,9 +89,9 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarContent>
-        <div className="p-6">
+        <div className="p-4">
           <img src={logoUrl} alt="ABCapture Logo" className="w-full h-auto bg-transparent" />
         </div>
         <SidebarGroup>

@@ -1,5 +1,6 @@
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -62,6 +63,28 @@ export default function StudentDetail() {
   const { blurText, blurInitials } = usePrivacy();
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<ApiIncident | null>(null);
+
+  const shareIncidentMutation = useMutation({
+    mutationFn: async ({ incidentId, parentEmails }: { incidentId: number; parentEmails: string[] }) => {
+      const res = await apiRequest("POST", `/api/incidents/${incidentId}/share`, { parentEmails });
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Incident Shared",
+        description: data.note || `Incident shared with ${data.recipients} guardian(s)`,
+      });
+      setShareDialogOpen(false);
+      setSelectedIncident(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Share Failed",
+        description: error.message || "Failed to share incident",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Fetch student data from API
   const { data: student, isLoading: studentLoading } = useQuery<ApiStudent>({
@@ -211,20 +234,20 @@ export default function StudentDetail() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Parent Information</CardTitle>
+              <CardTitle>Guardian Information</CardTitle>
             </div>
             <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" disabled={incidents.length === 0}>
                   <Share2 className="h-4 w-4 mr-2" />
-                  Share Incident with Parent
+                  Share Incident with Guardian
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Share Incident with Parent</DialogTitle>
+                  <DialogTitle>Share Incident with Guardian</DialogTitle>
                   <DialogDescription>
-                    Select an incident to share with {displayName}'s parent(s) via email.
+                    Select an incident to share with {displayName}'s guardian(s) via email.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 mt-4">
@@ -263,7 +286,7 @@ export default function StudentDetail() {
                     <div className="border-t pt-4">
                       <h4 className="text-sm font-semibold mb-3">Recipients</h4>
                       {parents.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No parents linked to this student yet.</p>
+                        <p className="text-sm text-muted-foreground">No guardians linked to this student yet.</p>
                       ) : (
                         <div className="space-y-2">
                           {parents.map((parent) => (
@@ -293,16 +316,19 @@ export default function StudentDetail() {
                       Cancel
                     </Button>
                     <Button
-                      disabled={!selectedIncident || parents.length === 0}
+                      disabled={!selectedIncident || parents.length === 0 || shareIncidentMutation.isPending}
                       onClick={() => {
-                        // TODO: Implement email functionality
-                        console.log('Sharing incident:', selectedIncident?.id, 'with parents:', parents);
-                        setShareDialogOpen(false);
-                        setSelectedIncident(null);
+                        if (selectedIncident) {
+                          const parentEmails = parents.map(p => p.email);
+                          shareIncidentMutation.mutate({
+                            incidentId: selectedIncident.id,
+                            parentEmails,
+                          });
+                        }
                       }}
                     >
                       <Mail className="h-4 w-4 mr-2" />
-                      Share via Email
+                      {shareIncidentMutation.isPending ? "Sending..." : "Share via Email"}
                     </Button>
                   </div>
                 </div>
@@ -312,7 +338,7 @@ export default function StudentDetail() {
         </CardHeader>
         <CardContent>
           {parents.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No parents linked to this student yet.</p>
+            <p className="text-sm text-muted-foreground">No guardians linked to this student yet.</p>
           ) : (
             <div className="space-y-3">
               {parents.map((parent) => (
