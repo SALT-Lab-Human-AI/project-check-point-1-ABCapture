@@ -29,6 +29,9 @@ export const users = pgTable("users", {
   googleId: varchar("google_id").unique(), // Google OAuth ID
   provider: varchar("provider").notNull().default("local"), // "local" or "google"
   displayName: varchar("display_name"), // Full name from OAuth provider
+  // Password reset fields
+  resetToken: varchar("reset_token"),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

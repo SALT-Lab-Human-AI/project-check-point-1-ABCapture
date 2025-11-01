@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
+import ResetPassword from "@/pages/reset-password";
 import Chat from "@/pages/chat";
 import Dashboard from "@/pages/dashboard";
 import Students from "@/pages/students";
@@ -26,13 +27,14 @@ import ParentDashboard from "@/pages/parent-dashboard";
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
 
-  // Show login/signup routes for unauthenticated users
+  // Show login/signup/reset routes for unauthenticated users
   if (isLoading || !isAuthenticated) {
     return (
       <Switch>
         <Route path="/signup" component={Signup} />
+        <Route path="/reset-password" component={ResetPassword} />
+        <Route path="/login" component={Login} />
         <Route path="/" component={Login} />
-        <Route component={Login} />
       </Switch>
     );
   }
