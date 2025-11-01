@@ -68,6 +68,68 @@ export function ChatbotRecordingInterface({
   const [isExtracting, setIsExtracting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Format message content with proper HTML for display
+  const formatMessageContent = (content: string): string => {
+    // First, handle the ABC response format specifically
+    if (content.includes('Incident analyzed:')) {
+      // Split the content into lines for more precise control
+      const lines = content.split('\n');
+      let inABCFormat = false;
+      
+      const processedLines = lines.map(line => {
+        // Check if this is an ABC component line
+        const abcMatch = line.match(/^\s*[-•*]?\s*(Antecedent|Behavior|Consequence):\s*(.*)/i);
+        if (abcMatch) {
+          inABCFormat = true;
+          const [_, label, text] = abcMatch;
+          // Clean up any extra spaces in the label and text
+          const cleanLabel = label.trim().replace(/:\s*$/, '');
+          const cleanText = text.trim();
+          return `- <strong>${cleanLabel}:</strong> ${cleanText}`;
+        }
+        
+        // For non-ABC lines or continuation lines
+        if (inABCFormat && line.trim() === '') {
+          return ''; // Remove extra blank lines within ABC format
+        }
+        
+        // Reset ABC format state if we hit the confirmation message
+        if (line.includes('ABC form has been auto-filled')) {
+          inABCFormat = false;
+          return line.trim();
+        }
+        
+        // Preserve other lines as-is
+        return line;
+      });
+      
+      // Process lines to ensure single spacing between bullet points
+      const filteredLines = processedLines.filter(line => line !== '');
+      const result = [];
+      
+      for (let i = 0; i < filteredLines.length; i++) {
+        const current = filteredLines[i];
+        const next = filteredLines[i + 1];
+        
+        result.push(current);
+        
+        // Only add a line break if the next line is not a bullet point
+        // and we're not at the last line
+        if (i < filteredLines.length - 1 && 
+            !next.match(/^\s*[-•*]?\s*(Antecedent|Behavior|Consequence):/i)) {
+          result.push('');
+        }
+      }
+      
+      return result.join('\n').replace(/\n/g, '<br />');
+    }
+    
+    // For non-ABC messages, just do basic formatting
+    return content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br />');
+  };
+
   // Send chat message mutation
   const sendMessage = useMutation({
     mutationFn: async (msgs: { role: string; content: string }[]) => {
@@ -312,9 +374,7 @@ export function ChatbotRecordingInterface({
                     className="text-sm" 
                     style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word' }}
                     dangerouslySetInnerHTML={{ 
-                      __html: message.content
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\n/g, '<br />')
+                      __html: formatMessageContent(message.content)
                     }} 
                   />
                   <p className="text-xs opacity-70 mt-1">
