@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { IncidentHistoryTable } from "@/components/incident-history-table";
 import { IncidentDetailModal } from "@/components/incident-detail-modal";
 import { Input } from "@/components/ui/input";
@@ -27,12 +29,42 @@ type ApiIncident = {
 
 export default function History() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [behaviorTypeFilter, setBehaviorTypeFilter] = useState<string>("all");
   const [selectedIncident, setSelectedIncident] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const signIncidentMutation = useMutation({
+    mutationFn: async ({ incidentId, signature }: { incidentId: number; signature: string }) => {
+      const res = await apiRequest("PATCH", `/api/incidents/${incidentId}`, {
+        signature,
+        status: 'signed',
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Incident Signed",
+        description: "The incident has been signed and finalized.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      setIsDetailModalOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Sign Failed",
+        description: error.message || "Failed to sign incident",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSignIncident = (incidentId: number, signature: string) => {
+    signIncidentMutation.mutate({ incidentId, signature });
+  };
 
   // Fetch students and incidents from API
   const { data: students = [], isLoading: studentsLoading } = useQuery<ApiStudent[]>({
@@ -213,6 +245,7 @@ export default function History() {
           setIsDetailModalOpen(false);
           setSelectedIncident(null);
         }}
+        onSign={handleSignIncident}
       />
     </div>
   );

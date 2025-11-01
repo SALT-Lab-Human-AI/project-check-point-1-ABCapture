@@ -1,8 +1,11 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useEffect } from "react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -15,7 +18,9 @@ import {
   AlertTriangle,
   Mail,
   Users,
-  Share2
+  Share2,
+  Edit,
+  FileSignature
 } from "lucide-react";
 import {
   Dialog,
@@ -47,8 +52,15 @@ type ApiIncident = {
   date: string;
   time: string;
   summary: string;
+  antecedent: string;
+  behavior: string;
+  consequence: string;
   incidentType: string;
+  functionOfBehavior: string[];
   location?: string;
+  status: 'draft' | 'signed';
+  signature?: string;
+  signedAt?: string;
   createdAt: string;
 };
 type ApiParent = {
@@ -66,6 +78,18 @@ export default function StudentDetail() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<ApiIncident | null>(null);
   const [sharedIncidents, setSharedIncidents] = useState<Set<number>>(new Set());
+  const [editingIncidentId, setEditingIncidentId] = useState<number | null>(null);
+
+  // Check for editIncident query parameter on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const editIncidentId = params.get('editIncident');
+    if (editIncidentId) {
+      setEditingIncidentId(parseInt(editIncidentId));
+      // Clear the query parameter from URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const shareIncidentMutation = useMutation({
     mutationFn: async ({ incidentId, parentEmails }: { incidentId: number; parentEmails: string[] }) => {
@@ -90,6 +114,37 @@ export default function StudentDetail() {
       });
     },
   });
+
+  const signIncidentMutation = useMutation({
+    mutationFn: async ({ incidentId, signature }: { incidentId: number; signature: string }) => {
+      const res = await apiRequest("PATCH", `/api/incidents/${incidentId}`, {
+        signature,
+        status: 'signed',
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Incident Signed",
+        description: "The incident has been signed and finalized.",
+      });
+      // Invalidate all incident queries to update everywhere
+      queryClient.invalidateQueries({ queryKey: [`/api/incidents?studentId=${studentId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      setEditingIncidentId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Sign Failed",
+        description: error.message || "Failed to sign incident",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSignIncident = (incidentId: number, signature: string) => {
+    signIncidentMutation.mutate({ incidentId, signature });
+  };
 
   // Fetch student data from API
   const { data: student, isLoading: studentLoading } = useQuery<ApiStudent>({
@@ -343,6 +398,140 @@ export default function StudentDetail() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Edit/Sign Incident Dialog */}
+            <Dialog open={editingIncidentId !== null} onOpenChange={(open) => !open && setEditingIncidentId(null)}>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    {incidents.find(i => i.id === editingIncidentId)?.status === 'draft' 
+                      ? 'Review and Sign Incident' 
+                      : 'Edit Incident'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {incidents.find(i => i.id === editingIncidentId)?.status === 'draft'
+                      ? 'Please review the incident details and add your signature to finalize.'
+                      : 'Update the incident details as needed.'}
+                  </DialogDescription>
+                </DialogHeader>
+                {editingIncidentId && (() => {
+                  const incident = incidents.find(i => i.id === editingIncidentId);
+                  if (!incident) return null;
+                  
+                  return (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Date</Label>
+                          <Input type="date" defaultValue={incident.date} disabled />
+                        </div>
+                        <div>
+                          <Label>Time</Label>
+                          <Input type="time" defaultValue={incident.time} disabled />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label>Summary</Label>
+                        <p className="text-sm p-3 bg-muted rounded-md">{incident.summary}</p>
+                      </div>
+                      
+                      <div>
+                        <Label>Antecedent (What happened before?)</Label>
+                        <p className="text-sm p-3 bg-muted rounded-md">{incident.antecedent}</p>
+                      </div>
+                      
+                      <div>
+                        <Label>Behavior (What did the student do?)</Label>
+                        <p className="text-sm p-3 bg-muted rounded-md">{incident.behavior}</p>
+                      </div>
+                      
+                      <div>
+                        <Label>Consequence (What happened after?)</Label>
+                        <p className="text-sm p-3 bg-muted rounded-md">{incident.consequence}</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Incident Type</Label>
+                          <p className="text-sm p-3 bg-muted rounded-md">{incident.incidentType}</p>
+                        </div>
+                        <div>
+                          <Label>Function of Behavior</Label>
+                          <div className="flex flex-wrap gap-1 p-3 bg-muted rounded-md">
+                            {incident.functionOfBehavior.map((func, i) => (
+                              <Badge key={i} variant="secondary">{func}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {incident.status === 'draft' && (
+                        <div className="border-t pt-4">
+                          <Label htmlFor="signature">Signature *</Label>
+                          <Input
+                            id="signature"
+                            placeholder="Type your full name to sign"
+                            className="mt-2"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                handleSignIncident(incident.id, e.currentTarget.value.trim());
+                              }
+                            }}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            By signing, you confirm that the information above is accurate.
+                          </p>
+                        </div>
+                      )}
+                      
+                      {incident.status === 'signed' && incident.signature && (
+                        <div className="border-t pt-4">
+                          <Label>Signed By</Label>
+                          <div className="flex items-center gap-2 mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                            <FileSignature className="h-4 w-4 text-green-600" />
+                            <div>
+                              <p className="text-sm font-medium text-green-900">{incident.signature}</p>
+                              <p className="text-xs text-green-700">
+                                {incident.signedAt && new Date(incident.signedAt).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-end gap-2 pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => setEditingIncidentId(null)}
+                        >
+                          {incident.status === 'draft' ? 'Cancel' : 'Close'}
+                        </Button>
+                        {incident.status === 'draft' && (
+                          <Button
+                            onClick={() => {
+                              const input = document.getElementById('signature') as HTMLInputElement;
+                              if (input?.value.trim()) {
+                                handleSignIncident(incident.id, input.value.trim());
+                              } else {
+                                toast({
+                                  title: "Signature Required",
+                                  description: "Please enter your full name to sign the incident.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          >
+                            <FileSignature className="h-4 w-4 mr-2" />
+                            Sign Incident
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
@@ -524,6 +713,12 @@ export default function StudentDetail() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="outline">{incident.incidentType}</Badge>
+                      {incident.status === 'draft' && (
+                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                          <FileSignature className="h-3 w-3 mr-1" />
+                          Draft - Needs Signature
+                        </Badge>
+                      )}
                       {incident.location && (
                         <span className="text-sm text-muted-foreground">
                           {incident.location}
@@ -538,6 +733,14 @@ export default function StudentDetail() {
                       <span>{incident.time}</span>
                     </div>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingIncidentId(incident.id)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    {incident.status === 'draft' ? 'Review & Sign' : 'Edit'}
+                  </Button>
                 </div>
               ))
             )}

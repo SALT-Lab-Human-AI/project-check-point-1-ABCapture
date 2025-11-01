@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Calendar, 
   Clock, 
@@ -11,7 +14,8 @@ import {
   FileText, 
   Download,
   Printer,
-  X
+  X,
+  FileSignature
 } from "lucide-react";
 
 interface IncidentDetailModalProps {
@@ -36,9 +40,12 @@ interface IncidentDetailModalProps {
   } | null;
   open: boolean;
   onClose: () => void;
+  onSign?: (incidentId: number, signature: string) => void;
 }
 
-export function IncidentDetailModal({ incident, open, onClose }: IncidentDetailModalProps) {
+export function IncidentDetailModal({ incident, open, onClose, onSign }: IncidentDetailModalProps) {
+  const [signature, setSignature] = useState("");
+  
   if (!incident) return null;
 
   const handlePrint = () => {
@@ -262,22 +269,59 @@ Status: ${incident.status}
 
           {/* Signature */}
           <div>
-            <h3 className="text-lg font-semibold mb-2">Recorded By</h3>
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{incident.signature || 'Not signed'}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Recorded on {new Date(incident.createdAt).toLocaleString()}
-            </p>
+            <h3 className="text-lg font-semibold mb-2">Signature</h3>
+            {incident.status === 'draft' && onSign ? (
+              <div className="space-y-3">
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800">
+                    <FileSignature className="h-4 w-4 inline mr-1" />
+                    This incident requires your signature to be finalized.
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="signature-input">Type your full name to sign</Label>
+                  <Input
+                    id="signature-input"
+                    placeholder="Your full name"
+                    value={signature}
+                    onChange={(e) => setSignature(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{incident.signature || 'Not signed'}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Recorded on {new Date(incident.createdAt).toLocaleString()}
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Close Button */}
-          <div className="flex justify-end pt-4">
-            <Button onClick={onClose}>
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={onClose}>
               <X className="h-4 w-4 mr-2" />
               Close
             </Button>
+            {incident.status === 'draft' && onSign && (
+              <Button 
+                onClick={() => {
+                  if (signature.trim()) {
+                    onSign(incident.id, signature.trim());
+                    setSignature("");
+                  }
+                }}
+                disabled={!signature.trim()}
+              >
+                <FileSignature className="h-4 w-4 mr-2" />
+                Sign Incident
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

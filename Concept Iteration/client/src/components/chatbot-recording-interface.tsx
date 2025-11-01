@@ -121,7 +121,9 @@ export function ChatbotRecordingInterface({
         }
       }
       
-      return result.join('\n').replace(/\n/g, '<br />');
+      return result.join('\n')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br />');
     }
     
     // For non-ABC messages, just do basic formatting

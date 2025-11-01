@@ -69,15 +69,16 @@ export default function RecordIncident() {
       console.log("[RecordIncident] Incident saved successfully:", data);
       toast({
         title: "Success!",
-        description: "Incident recorded successfully",
+        description: "Incident saved as draft. Please review and sign.",
       });
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/incidents?studentId=${params?.studentId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/students"] });
       // Redirect to student detail page
       setTimeout(() => {
         setLocation(`/students/${params?.studentId}`);
-      }, 1000);
+      }, 500);
     },
     onError: (error: any) => {
       console.error("[RecordIncident] Error saving incident:", error);
@@ -167,8 +168,7 @@ export default function RecordIncident() {
         incidentType: formData.incidentType || "Other",
         functionOfBehavior: formData.functionOfBehavior || [],
         location: "",
-        signature: "Digital Signature",
-        status: "signed",
+        status: "draft",
       };
 
       console.log("[RecordIncident] Submitting incident:", incidentData);

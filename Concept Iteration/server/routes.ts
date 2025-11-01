@@ -258,11 +258,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.session as any).userId as string;
       const id = Number(req.params.id);
+      console.log("[PATCH Incident] ID:", id, "User:", userId, "Body:", req.body);
       const data = updateIncidentSchema.parse(req.body);
+      console.log("[PATCH Incident] Parsed data:", data);
       const row = await storage.updateIncident(id, userId, data);
-      if (!row) return res.status(404).json({ message: "Not found" });
+      if (!row) {
+        console.log("[PATCH Incident] Not found");
+        return res.status(404).json({ message: "Not found" });
+      }
+      console.log("[PATCH Incident] Success:", row);
       res.json(row);
     } catch (err: any) {
+      console.error("[PATCH Incident] Error:", err);
       res.status(400).json({ message: err.message || "Invalid incident data" });
     }
   });
