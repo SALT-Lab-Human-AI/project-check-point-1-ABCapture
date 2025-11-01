@@ -113,6 +113,190 @@ Remember: SPEED over perfection. Teachers need FAST assistance, not a questionna
 }
 
 /**
+ * Transcribe audio using Groq Whisper API
+ * @param audioBuffer - Audio file buffer
+ * @param fileName - Original filename (for format detection)
+ * @returns Transcribed text
+ */
+export async function transcribeAudio(audioBuffer: Buffer, fileName: string): Promise<string> {
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error("Groq API key is not configured. Please add GROQ_API_KEY to your .env file.");
+  }
+
+  console.log(`[Groq Whisper] Transcribing audio file: ${fileName} (${audioBuffer.length} bytes)`);
+
+  try {
+    // Use form-data package and convert to buffer for reliable multipart handling
+    const FormData = (await import('form-data')).default;
+    
+    // Determine content type
+    const contentType = fileName.endsWith('.webm') ? 'audio/webm' : 
+                        fileName.endsWith('.mp3') ? 'audio/mpeg' :
+                        fileName.endsWith('.wav') ? 'audio/wav' : 'audio/webm';
+    
+    // Create form-data instance
+    const formData = new FormData();
+    
+    // Append file buffer with proper filename and content type
+    formData.append('file', audioBuffer, {
+      filename: fileName,
+      contentType: contentType,
+    });
+    formData.append('model', 'whisper-large-v3');
+    
+    console.log(`[Groq Whisper] Audio buffer size: ${audioBuffer.length} bytes`);
+    console.log(`[Groq Whisper] Filename: ${fileName}`);
+    console.log(`[Groq Whisper] Content type: ${contentType}`);
+    
+    // Get headers from form-data (includes Content-Type with boundary)
+    const headers = formData.getHeaders();
+    headers['Authorization'] = `Bearer ${process.env.GROQ_API_KEY}`;
+    
+    // Don't set Content-Length manually - let form-data calculate it
+    // Remove any Content-Length that might have been set
+    delete headers['content-length'];
+    delete headers['Content-Length'];
+    
+    // Try to get length synchronously, and if successful, set it
+    // Otherwise, we'll use chunked transfer encoding
+    try {
+      const length = formData.getLengthSync();
+      if (length && typeof length === 'number') {
+        headers['Content-Length'] = length.toString();
+        console.log(`[Groq Whisper] Content-Length: ${length} bytes`);
+      } else {
+        console.log(`[Groq Whisper] Using chunked transfer encoding (length unknown)`);
+      }
+    } catch (e) {
+      // Length can't be determined - use chunked encoding
+      console.log(`[Groq Whisper] Using chunked transfer encoding`);
+    }
+    
+    console.log(`[Groq Whisper] Content-Type: ${headers['content-type']}`);
+    console.log(`[Groq Whisper] Final headers:`, Object.keys(headers).join(', '));
+    
+    // Use native https module to pipe form-data stream directly
+    // This ensures proper multipart formatting
+    const https = await import('https');
+    const response = await new Promise<{ status: number; statusText: string; data: any }>((resolve, reject) => {
+      const req = https.request(
+        {
+          hostname: 'api.groq.com',
+          path: '/openai/v1/audio/transcriptions',
+          method: 'POST',
+          headers: headers as Record<string, string>,
+        },
+        (res) => {
+          let data = '';
+          res.on('data', (chunk) => {
+            data += chunk;
+          });
+          res.on('end', () => {
+            try {
+              console.log(`[Groq Whisper] Response status: ${res.statusCode}`);
+              if (res.statusCode !== 200) {
+                console.log(`[Groq Whisper] Response body (first 1000 chars):`, data.substring(0, 1000));
+              }
+              
+              let jsonData;
+              try {
+                jsonData = JSON.parse(data);
+              } catch (parseError) {
+                console.error(`[Groq Whisper] Failed to parse JSON:`, data);
+                throw new Error(`Invalid JSON response: ${data.substring(0, 200)}`);
+              }
+              
+              resolve({
+                status: res.statusCode || 500,
+                statusText: res.statusMessage || 'Unknown',
+                data: jsonData,
+              });
+            } catch (e: any) {
+              reject(new Error(`Failed to parse response: ${e.message || data.substring(0, 200)}`));
+            }
+          });
+        }
+      );
+
+      req.on('error', (err) => {
+        console.error('[Groq Whisper] Request error:', err);
+        reject(err);
+      });
+
+      formData.on('error', (err) => {
+        console.error('[Groq Whisper] Form-data error:', err);
+        reject(err);
+      });
+
+      // Pipe form-data stream directly to request
+      // This ensures proper multipart formatting with correct boundaries
+      // form-data will automatically handle Content-Length and boundaries
+      formData.pipe(req);
+    });
+
+    const responseObj = {
+      ok: response.status >= 200 && response.status < 300,
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data,
+    };
+
+    if (!responseObj.ok) {
+      const errorData = responseObj.data || {};
+      console.error("[Groq Whisper] API Error:", {
+        status: responseObj.status,
+        statusText: responseObj.statusText,
+        error: errorData,
+        fullError: JSON.stringify(errorData, null, 2),
+      });
+
+      if (responseObj.status === 401) {
+        throw new Error("API authentication failed. Please verify your GROQ_API_KEY is correct.");
+      }
+      if (responseObj.status === 429) {
+        throw new Error("Rate limit exceeded. Please wait a moment and try again.");
+      }
+      if (responseObj.status === 400) {
+        // Log the full error for debugging
+        const errorMsg = errorData.error?.message || errorData.message || JSON.stringify(errorData);
+        console.error("[Groq Whisper] 400 Bad Request - Full error:", errorMsg);
+        throw new Error(`Invalid request: ${errorMsg}`);
+      }
+
+      throw new Error(`Transcription failed: ${responseObj.statusText} - ${JSON.stringify(errorData)}`);
+    }
+
+    const result = responseObj.data;
+    const transcript = result.text || '';
+
+    console.log(`[Groq Whisper] Successfully transcribed (${transcript.length} chars)`);
+    return transcript;
+
+  } catch (error: any) {
+    console.error("[Groq Whisper] Transcription error:", {
+      message: error.message,
+      stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+      fullError: error,
+    });
+
+    // If the error contains the multipart EOF error, provide more context
+    if (error.message?.includes('multipart') || error.message?.includes('EOF')) {
+      console.error("[Groq Whisper] Multipart error detected - this usually means:");
+      console.error("  1. The multipart/form-data structure is incorrect");
+      console.error("  2. Content-Length doesn't match actual body size");
+      console.error("  3. Boundary markers are malformed");
+      console.error("  4. Full error:", JSON.stringify(error, null, 2));
+    }
+
+    if (error.message.includes('fetch')) {
+      throw new Error("Network error - unable to reach Groq API. Please check your internet connection.");
+    }
+
+    throw new Error(error.message || "Failed to transcribe audio. Please try again.");
+  }
+}
+
+/**
  * Extract structured ABC data from a conversation about a behavioral incident
  * @param conversationMessages - Full conversation history between teacher and AI
  * @returns Structured ABC data object ready for incident form

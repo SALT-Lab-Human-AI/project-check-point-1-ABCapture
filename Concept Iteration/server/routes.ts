@@ -6,8 +6,10 @@ import { parents, parentStudents } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
+import multer from "multer";
 import { insertUserSchema, updateUserSchema, loginSchema, insertStudentSchema, updateStudentSchema, insertIncidentSchema, updateIncidentSchema } from "@shared/schema";
-import { sendChatMessage, extractABCData, type ChatMessage } from "./groq";
+import { sendChatMessage, extractABCData, transcribeAudio, type ChatMessage } from "./groq";
+import { redactStudentNames } from "./utils/pii-redaction";
 import passport from "./passport";
 
 // Session middleware
@@ -276,28 +278,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Login route
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, password } = loginSchema.parse(req.body);
+      console.log("[Login] Request body:", JSON.stringify(req.body));
+      
+      // Better Zod error handling
+      const parsed = loginSchema.safeParse(req.body);
+      if (!parsed.success) {
+        console.error("[Login] Validation error:", parsed.error.errors);
+        return res.status(400).json({ 
+          message: "Invalid email or password format",
+          errors: parsed.error.errors 
+        });
+      }
+      
+      const { email, password } = parsed.data;
+      console.log("[Login] Attempting login for:", email);
       
       const user = await storage.authenticateUser(email, password);
       
       if (!user) {
+        console.log("[Login] Authentication failed for:", email);
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       // Defensive check for session
       if (!req.session) {
-        console.error("Session is undefined during login");
+        console.error("[Login] Session is undefined during login");
         return res.status(500).json({ message: "Session initialization failed" });
       }
 
       // Set session
       (req.session as any).userId = user.id;
+      console.log("[Login] Success for:", email, "userId:", user.id);
       
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("[Login] Error:", error);
       res.status(400).json({ message: error.message || "Login failed" });
     }
   });
@@ -518,6 +535,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("ABC extraction error:", error);
       res.status(500).json({ message: error.message || "Failed to extract ABC data" });
+    }
+  });
+
+  // Audio transcription endpoint
+  // Configure multer for in-memory file storage (max 25MB for Groq Whisper)
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 25 * 1024 * 1024, // 25MB max file size
+    },
+    fileFilter: (req, file, cb) => {
+      // Accept audio formats supported by Whisper
+      const allowedMimes = ['audio/webm', 'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/mp4'];
+      if (allowedMimes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid audio format. Supported: webm, mp3, wav, mp4'));
+      }
+    },
+  });
+
+  app.post("/api/chat/transcribe-audio", isAuthenticated, upload.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No audio file provided" });
+      }
+
+      const userId = (req.session as any).userId as string;
+      console.log(`[Transcribe Audio] Request from user ${userId}, file: ${req.file.originalname} (${req.file.size} bytes)`);
+
+      // Transcribe audio using Groq Whisper
+      const transcript = await transcribeAudio(req.file.buffer, req.file.originalname);
+      console.log(`[Transcribe Audio] Transcription received (${transcript.length} chars)`);
+
+      // Get user's students for PII redaction
+      const students = await storage.listStudents(userId);
+      const studentNames = students.map(s => s.name);
+      
+      console.log(`[Transcribe Audio] Redacting ${studentNames.length} student names`);
+      
+      // Redact student names from transcript
+      const redactedTranscript = redactStudentNames(transcript, studentNames);
+
+      console.log(`[Transcribe Audio] Returning redacted transcript (${redactedTranscript.length} chars)`);
+      
+      res.json({ transcript: redactedTranscript });
+    } catch (error: any) {
+      console.error("[Transcribe Audio] Error:", error);
+      res.status(500).json({ message: error.message || "Failed to transcribe audio" });
     }
   });
 

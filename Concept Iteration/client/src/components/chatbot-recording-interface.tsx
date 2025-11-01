@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Send, Bot, User, Sparkles } from "lucide-react";
+import { Loader2, Send, Bot, User, Sparkles, Mic, MicOff } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useVoiceRecording } from "@/hooks/use-voice-recording";
 
 type ChatMessage = {
   id: string;
@@ -56,13 +57,6 @@ export function ChatbotRecordingInterface({
   const [isExtracting, setIsExtracting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
-
   // Send chat message mutation
   const sendMessage = useMutation({
     mutationFn: async (msgs: { role: string; content: string }[]) => {
@@ -81,16 +75,8 @@ export function ChatbotRecordingInterface({
     },
   });
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
-
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      content: inputValue,
-      timestamp: new Date(),
-    };
-
+  // Handle sending message with content (used by both text and voice input)
+  const handleSendMessageWithContent = async (content: string, userMessage: ChatMessage) => {
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
 
@@ -182,6 +168,59 @@ export function ChatbotRecordingInterface({
     }
   };
 
+  // Voice recording hook
+  const {
+    state: recordingState,
+    error: recordingError,
+    isRecording,
+    isProcessing,
+    startRecording,
+    stopRecording,
+    reset: resetRecording,
+  } = useVoiceRecording({
+    onTranscript: (transcript) => {
+      console.log("[ChatbotRecording] Voice transcript received:", transcript);
+      // Auto-fill input and send message
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: "user",
+        content: transcript,
+        timestamp: new Date(),
+      };
+      handleSendMessageWithContent(transcript, userMessage);
+    },
+    onError: (error) => {
+      console.error("[ChatbotRecording] Voice recording error:", error);
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `⚠️ Voice input error: ${error.message}`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    },
+  });
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim()) return;
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: inputValue,
+      timestamp: new Date(),
+    };
+
+    handleSendMessageWithContent(inputValue, userMessage);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -204,12 +243,26 @@ export function ChatbotRecordingInterface({
               </p>
             </div>
           </div>
-          {isExtracting && (
-            <Badge variant="secondary" className="animate-pulse">
-              <Sparkles className="h-3 w-3 mr-1" />
-              Analyzing...
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {isRecording && (
+              <Badge variant="destructive" className="animate-pulse">
+                <Mic className="h-3 w-3 mr-1" />
+                Recording...
+              </Badge>
+            )}
+            {isProcessing && (
+              <Badge variant="secondary" className="animate-pulse">
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                Transcribing...
+              </Badge>
+            )}
+            {isExtracting && (
+              <Badge variant="secondary" className="animate-pulse">
+                <Sparkles className="h-3 w-3 mr-1" />
+                Analyzing...
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
 
@@ -276,12 +329,25 @@ export function ChatbotRecordingInterface({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              disabled={sendMessage.isPending}
+              disabled={sendMessage.isPending || isRecording || isProcessing}
               className="flex-1"
             />
             <Button
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={sendMessage.isPending || isProcessing}
+              size="icon"
+              variant={isRecording ? "destructive" : "outline"}
+              title={isRecording ? "Stop recording" : "Start voice recording"}
+            >
+              {isRecording ? (
+                <MicOff className="h-4 w-4" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
               onClick={handleSendMessage}
-              disabled={!inputValue.trim() || sendMessage.isPending}
+              disabled={!inputValue.trim() || sendMessage.isPending || isRecording || isProcessing}
               size="icon"
             >
               {sendMessage.isPending ? (
@@ -292,8 +358,15 @@ export function ChatbotRecordingInterface({
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Press Enter to send • The form will auto-fill as we chat
+            {isRecording 
+              ? "Recording... Click the microphone to stop" 
+              : isProcessing
+              ? "Transcribing your voice..."
+              : "Type or click the microphone to use voice • Press Enter to send"}
           </p>
+          {recordingError && (
+            <p className="text-xs text-destructive mt-1">{recordingError}</p>
+          )}
         </div>
       </CardContent>
     </Card>
