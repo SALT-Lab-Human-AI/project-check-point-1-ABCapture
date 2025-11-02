@@ -2,7 +2,7 @@ import { createTransport } from 'nodemailer';
 import type { Incident, Student } from '@shared/schema';
 
 // Create reusable transporter
-const createTransporter = () => {
+export const createTransporter = () => {
   // For development, you can use Gmail or a test service like Ethereal
   // For production, use a service like SendGrid, AWS SES, or Mailgun
   
@@ -222,6 +222,83 @@ export const sendPasswordResetEmail = async (
     };
   } catch (error: any) {
     console.error('[Email] Failed to send password reset email:', error);
+    return {
+      success: false,
+      message: `Failed to send email: ${error.message}`,
+    };
+  }
+};
+
+export const sendVerificationEmail = async (recipientEmail: string, verificationToken: string) => {
+  try {
+    const transporter = createTransporter();
+    
+    if (!transporter) {
+      console.warn('[Email] Email not configured. Skipping verification email.');
+      return {
+        success: false,
+        message: 'Email service not configured',
+      };
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+    const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+    const emailHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9fafb; padding: 30px; margin-top: 20px; border-radius: 8px; }
+          .button { display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Verify Your Email</h1>
+          </div>
+          <div class="content">
+            <p>Thank you for signing up for ABCapture!</p>
+            <p>Please verify your email address by clicking the button below:</p>
+            <div style="text-align: center;">
+              <a href="${verificationLink}" class="button">Verify Email Address</a>
+            </div>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #4F46E5;">${verificationLink}</p>
+            <p><strong>This link will expire in 24 hours.</strong></p>
+            <p>If you didn't create an account, you can safely ignore this email.</p>
+          </div>
+          <div class="footer">
+            <p>This is an automated message from ABCapture Incident Tracking System.</p>
+            <p>Please do not reply to this email.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: recipientEmail,
+      subject: 'Verify Your Email - ABCapture',
+      html: emailHTML,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    console.log('[Email] Successfully sent verification email to:', recipientEmail);
+    
+    return {
+      success: true,
+      message: 'Verification email sent successfully',
+    };
+  } catch (error: any) {
+    console.error('[Email] Failed to send verification email:', error);
     return {
       success: false,
       message: `Failed to send email: ${error.message}`,

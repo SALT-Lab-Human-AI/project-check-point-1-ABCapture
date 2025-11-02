@@ -2,11 +2,12 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { sendIncidentEmail, sendPasswordResetEmail } from "./email";
+import { sendIncidentEmail, sendPasswordResetEmail, sendVerificationEmail, createTransporter } from "./email";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import { parents, parentStudents, users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import multer from "multer";
@@ -334,13 +335,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Signup route
+  // Send verification code to email
+  app.post("/api/auth/send-verification-code", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "An account with this email already exists" });
+      }
+
+      // Generate 6-digit verification code
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiryTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      // Store verification code in session temporarily
+      (req.session as any).verificationCode = verificationCode;
+      (req.session as any).verificationEmail = email;
+      (req.session as any).verificationExpiry = expiryTime;
+
+      // Send verification code via email
+      const transporter = createTransporter();
+      if (transporter) {
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject: 'Your Verification Code - ABCapture',
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; }
+                .content { background-color: #f9fafb; padding: 30px; margin-top: 20px; border-radius: 8px; }
+                .code { font-size: 32px; font-weight: bold; color: #4F46E5; text-align: center; letter-spacing: 5px; padding: 20px; background: white; border-radius: 8px; margin: 20px 0; }
+                .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Email Verification</h1>
+                </div>
+                <div class="content">
+                  <p>Thank you for signing up for ABCapture!</p>
+                  <p>Please use the following verification code to complete your registration:</p>
+                  <div class="code">${verificationCode}</div>
+                  <p><strong>This code will expire in 10 minutes.</strong></p>
+                  <p>If you didn't request this code, you can safely ignore this email.</p>
+                </div>
+                <div class="footer">
+                  <p>This is an automated message from ABCapture Incident Tracking System.</p>
+                  <p>Please do not reply to this email.</p>
+                </div>
+              </div>
+            </body>
+            </html>
+          `,
+        };
+
+        await transporter.sendMail(mailOptions);
+      }
+
+      console.log('[Verification] Code sent to:', email, 'Code:', verificationCode);
+      res.json({ message: "Verification code sent to your email" });
+    } catch (error: any) {
+      console.error('[Verification] Error:', error);
+      res.status(500).json({ message: "Failed to send verification code" });
+    }
+  });
+
+  // Signup route (now requires verification code)
   app.post("/api/auth/signup", async (req, res) => {
     try {
       console.log("Signup attempt with data:", req.body);
       console.log("Session before signup:", !!req.session);
       
-      const validatedData = insertUserSchema.parse(req.body);
+      const { verificationCode, ...validatedData } = insertUserSchema.extend({ verificationCode: z.string() }).parse(req.body);
+      
+      // Verify the code matches and hasn't expired
+      const sessionCode = (req.session as any).verificationCode;
+      const sessionEmail = (req.session as any).verificationEmail;
+      const sessionExpiry = (req.session as any).verificationExpiry;
+
+      if (!sessionCode || !sessionEmail) {
+        return res.status(400).json({ message: "Please request a verification code first" });
+      }
+
+      if (validatedData.email !== sessionEmail) {
+        return res.status(400).json({ message: "Email does not match the verification request" });
+      }
+
+      if (new Date() > new Date(sessionExpiry)) {
+        return res.status(400).json({ message: "Verification code has expired. Please request a new one" });
+      }
+
+      if (verificationCode !== sessionCode) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      // Clear verification data from session
+      delete (req.session as any).verificationCode;
+      delete (req.session as any).verificationEmail;
+      delete (req.session as any).verificationExpiry;
       
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(validatedData.email);
@@ -348,8 +452,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User already exists" });
       }
 
-      // Create new user
-      const user = await storage.createUser(validatedData);
+      // Create new user (email already verified via code)
+      const user = await storage.createUser({
+        ...validatedData,
+        emailVerified: 'true', // Already verified via code
+      });
       console.log("User created:", user.id);
       
       // Defensive check for session
