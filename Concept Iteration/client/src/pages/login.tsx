@@ -13,7 +13,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Link } from "wouter";
-import logoUrl from "@assets/Generated Image October 15, 2025 - 2_50PM_1760558692104.png";
+import logoUrl from "../../../attached_assets/ABCapture logo.png";
 import { FcGoogle } from "react-icons/fc";
 
 export default function Login() {

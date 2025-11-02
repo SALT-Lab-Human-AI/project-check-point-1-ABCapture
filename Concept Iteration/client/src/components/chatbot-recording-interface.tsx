@@ -9,6 +9,9 @@ import { Loader2, Send, Bot, User, Sparkles, Mic, MicOff } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useVoiceRecording } from "@/hooks/use-voice-recording";
+import aBlockIcon from "@assets/A Block.png";
+import bBlockIcon from "@assets/B Block.png";
+import cBlockIcon from "@assets/C Block.png";
 
 type ChatMessage = {
   id: string;
@@ -77,15 +80,28 @@ export function ChatbotRecordingInterface({
       let inABCFormat = false;
       
       const processedLines = lines.map(line => {
-        // Check if this is an ABC component line
-        const abcMatch = line.match(/^\s*[-•*]?\s*(Antecedent|Behavior|Consequence):\s*(.*)/i);
+        // Check if this is an ABC component line (with or without ** bold markers)
+        const abcMatch = line.match(/^\s*[-•*]?\s*\*{0,2}(Antecedent|Behavior|Consequence)\*{0,2}:\s*(.*)/i);
         if (abcMatch) {
           inABCFormat = true;
           const [_, label, text] = abcMatch;
-          // Clean up any extra spaces in the label and text
-          const cleanLabel = label.trim().replace(/:\s*$/, '');
+          // Clean up any extra spaces and bold markers in the label and text
+          const cleanLabel = label.trim().replace(/:\s*$/, '').replace(/\*/g, '');
           const cleanText = text.trim();
-          return `- <strong>${cleanLabel}:</strong> ${cleanText}`;
+          
+          // Determine which icon to use based on the label
+          let iconSrc = '';
+          if (cleanLabel.toLowerCase() === 'antecedent') {
+            iconSrc = aBlockIcon;
+          } else if (cleanLabel.toLowerCase() === 'behavior') {
+            iconSrc = bBlockIcon;
+          } else if (cleanLabel.toLowerCase() === 'consequence') {
+            iconSrc = cBlockIcon;
+          }
+          
+          // Ensure the icon src is properly formatted for HTML
+          const escapedIconSrc = iconSrc.replace(/"/g, '&quot;');
+          return `- <img src="${escapedIconSrc}" alt="${cleanLabel.charAt(0)}" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 6px;" /> <strong>${cleanLabel}:</strong> ${cleanText}`;
         }
         
         // For non-ABC lines or continuation lines
@@ -116,7 +132,7 @@ export function ChatbotRecordingInterface({
         // Only add a line break if the next line is not a bullet point
         // and we're not at the last line
         if (i < filteredLines.length - 1 && 
-            !next.match(/^\s*[-•*]?\s*(Antecedent|Behavior|Consequence):/i)) {
+            !next.match(/^\s*[-•*]?\s*\*{0,2}(Antecedent|Behavior|Consequence)\*{0,2}:/i)) {
           result.push('');
         }
       }
@@ -304,7 +320,7 @@ export function ChatbotRecordingInterface({
   };
 
   return (
-    <Card className="h-[600px] flex flex-col">
+    <Card className="flex flex-col" style={{ height: 'calc(100vh - 400px)', minHeight: '600px' }}>
       <CardHeader className="border-b">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

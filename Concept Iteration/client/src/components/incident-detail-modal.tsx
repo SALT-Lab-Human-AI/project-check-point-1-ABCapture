@@ -17,6 +17,9 @@ import {
   X,
   FileSignature
 } from "lucide-react";
+import aBlockIcon from "../../../attached_assets/A Block.png";
+import bBlockIcon from "../../../attached_assets/B Block.png";
+import cBlockIcon from "../../../attached_assets/C Block.png";
 
 interface IncidentDetailModalProps {
   incident: {
@@ -176,9 +179,7 @@ Status: ${incident.status}
               {/* Antecedent */}
               <div className="border-l-4 border-chart-1 pl-4 py-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-chart-1 text-white rounded-md px-2 py-1 text-xs font-semibold">
-                    A
-                  </span>
+                  <img src={aBlockIcon} alt="A" className="w-6 h-6" />
                   <h4 className="font-semibold">Antecedent</h4>
                   <span className="text-xs text-muted-foreground">(What happened before)</span>
                 </div>
@@ -188,9 +189,7 @@ Status: ${incident.status}
               {/* Behavior */}
               <div className="border-l-4 border-chart-2 pl-4 py-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-chart-2 text-white rounded-md px-2 py-1 text-xs font-semibold">
-                    B
-                  </span>
+                  <img src={bBlockIcon} alt="B" className="w-6 h-6" />
                   <h4 className="font-semibold">Behavior</h4>
                   <span className="text-xs text-muted-foreground">(What the student did)</span>
                 </div>
@@ -200,9 +199,7 @@ Status: ${incident.status}
               {/* Consequence */}
               <div className="border-l-4 border-chart-3 pl-4 py-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-chart-3 text-white rounded-md px-2 py-1 text-xs font-semibold">
-                    C
-                  </span>
+                  <img src={cBlockIcon} alt="C" className="w-6 h-6" />
                   <h4 className="font-semibold">Consequence</h4>
                   <span className="text-xs text-muted-foreground">(What happened after)</span>
                 </div>

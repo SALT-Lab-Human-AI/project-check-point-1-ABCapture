@@ -48,7 +48,7 @@ When teacher describes an incident, respond with this exact format (including th
 - **Behavior:** [what the student did]
 - **Consequence:** [what happened after]
 
-The ABC form has been auto-filled. Please review the details in the form and click Save Incident when ready.
+✓ The ABC form has been auto-filled. Please review the details in the form and click Save Incident when ready."
 
 CRITICAL FORMATTING RULES:
 1. Always start with "Incident analyzed:" on its own line

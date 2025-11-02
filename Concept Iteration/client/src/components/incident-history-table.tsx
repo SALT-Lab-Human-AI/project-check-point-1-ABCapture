@@ -8,9 +8,15 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { Eye, Edit, Trash2, MoreVertical } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePrivacy } from "@/contexts/privacy-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Incident {
   id: string;
@@ -26,11 +32,15 @@ interface Incident {
 interface IncidentHistoryTableProps {
   incidents: Incident[];
   onViewIncident: (incidentId: string) => void;
+  onEditIncident: (incidentId: string) => void;
+  onDeleteIncident: (incidentId: string) => void;
 }
 
 export function IncidentHistoryTable({
   incidents,
   onViewIncident,
+  onEditIncident,
+  onDeleteIncident,
 }: IncidentHistoryTableProps) {
   const { blurText, blurInitials } = usePrivacy();
   
@@ -86,15 +96,41 @@ export function IncidentHistoryTable({
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onViewIncident(incident.id)}
-                    data-testid={`button-view-${incident.id}`}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    View
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        data-testid={`button-actions-${incident.id}`}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => onViewIncident(incident.id)}
+                        data-testid={`menu-view-${incident.id}`}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onEditIncident(incident.id)}
+                        data-testid={`menu-edit-${incident.id}`}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDeleteIncident(incident.id)}
+                        className="text-destructive focus:text-destructive"
+                        data-testid={`menu-delete-${incident.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             );

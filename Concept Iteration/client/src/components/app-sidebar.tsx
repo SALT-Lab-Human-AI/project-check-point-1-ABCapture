@@ -13,7 +13,7 @@ import {
 import { Link, useLocation } from "wouter";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
-import logoUrl from "@assets/Generated Image October 15, 2025 - 2_50PM_1760558692104.png";
+import logoUrl from "../../../attached_assets/ABCapture logo.png";
 
 const teacherMenuItems = [
   {

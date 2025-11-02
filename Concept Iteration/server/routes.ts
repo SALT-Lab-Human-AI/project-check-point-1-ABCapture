@@ -274,6 +274,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/incidents/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      const id = Number(req.params.id);
+      console.log("[DELETE Incident] ID:", id, "User:", userId);
+      const success = await storage.deleteIncident(id, userId);
+      if (!success) {
+        console.log("[DELETE Incident] Not found");
+        return res.status(404).json({ message: "Incident not found" });
+      }
+      console.log("[DELETE Incident] Success");
+      res.json({ message: "Incident deleted successfully" });
+    } catch (err: any) {
+      console.error("[DELETE Incident] Error:", err);
+      res.status(500).json({ message: err.message || "Failed to delete incident" });
+    }
+  });
+
   // Signup route
   app.post("/api/auth/signup", async (req, res) => {
     try {

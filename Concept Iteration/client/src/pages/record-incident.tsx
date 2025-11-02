@@ -7,9 +7,15 @@ import { ABCFormEdit } from "@/components/abc-form-edit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, Sparkles, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles, CheckCircle2, PenTool, Check, Clock } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import aBlockIcon from "@assets/A Block.png";
+import bBlockIcon from "@assets/B Block.png";
+import cBlockIcon from "@assets/C Block.png";
 
 type ApiStudent = { id: number; name: string; grade: string | null };
 
@@ -37,6 +43,8 @@ export default function RecordIncident() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showAutoFillNotification, setShowAutoFillNotification] = useState(false);
+  const [signatureName, setSignatureName] = useState("");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
 
   // Fetch students from API
   const { data: students = [], isLoading: studentsLoading } = useQuery<ApiStudent[]>({
@@ -143,6 +151,7 @@ export default function RecordIncident() {
     
     setFormData(updatedFormData);
     setShowAutoFillNotification(true);
+    setHasUnsavedChanges(true);
     
     console.log("[RecordIncident] ✅ Form data updated");
     
@@ -188,6 +197,11 @@ export default function RecordIncident() {
     console.log("[RecordIncident] Saving edited form:", updatedData);
     setFormData(updatedData);
     setIsEditing(false);
+    setHasUnsavedChanges(false);
+    toast({
+      title: "Changes Saved",
+      description: "Your edits have been saved to the draft.",
+    });
   };
 
   const handleCancelEdit = () => {
@@ -197,10 +211,72 @@ export default function RecordIncident() {
   const handleClearForm = () => {
     if (confirm("Are you sure you want to clear the form? This will remove all auto-filled data.")) {
       setFormData(null);
+      setSignatureName("");
+      setHasUnsavedChanges(false);
       toast({
         title: "Form Cleared",
         description: "You can start over by describing the incident in the chat.",
       });
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!formData || !student) return;
+
+    setIsSaving(true);
+    try {
+      const incidentData = {
+        studentId: student.id,
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        summary: formData.summary || "",
+        antecedent: formData.antecedent || "",
+        behavior: formData.behavior || "",
+        consequence: formData.consequence || "",
+        incidentType: formData.incidentType || "Other",
+        functionOfBehavior: formData.functionOfBehavior || [],
+        location: "",
+        status: "draft",
+      };
+
+      console.log("[RecordIncident] Saving draft:", incidentData);
+      await saveIncident.mutateAsync(incidentData);
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error("[RecordIncident] Error saving draft:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSignAndSave = async () => {
+    if (!formData || !student || !signatureName.trim()) return;
+
+    setIsSaving(true);
+    try {
+      const incidentData = {
+        studentId: student.id,
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        summary: formData.summary || "",
+        antecedent: formData.antecedent || "",
+        behavior: formData.behavior || "",
+        consequence: formData.consequence || "",
+        incidentType: formData.incidentType || "Other",
+        functionOfBehavior: formData.functionOfBehavior || [],
+        location: "",
+        status: "signed",
+        signature: signatureName,
+        signedAt: new Date().toISOString(),
+      };
+
+      console.log("[RecordIncident] Signing and saving incident:", incidentData);
+      await saveIncident.mutateAsync(incidentData);
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error("[RecordIncident] Error saving incident:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -221,7 +297,7 @@ export default function RecordIncident() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 items-start">
         {/* Left: Chatbot */}
         <ChatbotRecordingInterface
           studentName={student.name}
@@ -258,6 +334,19 @@ export default function RecordIncident() {
                 <div className="flex items-center justify-between">
                   <CardTitle>ABC Incident Form</CardTitle>
                   <div className="flex gap-2">
+                    <Badge variant={hasUnsavedChanges ? "secondary" : "default"} className="flex items-center gap-1">
+                      {hasUnsavedChanges ? (
+                        <>
+                          <Clock className="h-3 w-3" />
+                          Not Saved
+                        </>
+                      ) : (
+                        <>
+                          <Check className="h-3 w-3" />
+                          Changes Saved
+                        </>
+                      )}
+                    </Badge>
                     <Button
                       variant="outline"
                       size="sm"
@@ -279,9 +368,9 @@ export default function RecordIncident() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
+                <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(248, 52, 34, 0.08)' }}>
                   <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                    <span className="bg-chart-1 text-white rounded-md px-2 py-1 text-xs">A</span>
+                    <img src={aBlockIcon} alt="A" className="w-6 h-6" />
                     Antecedent
                   </h3>
                   <p className="text-sm pl-9 whitespace-pre-wrap">
@@ -289,9 +378,9 @@ export default function RecordIncident() {
                   </p>
                 </div>
 
-                <div>
+                <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(61, 148, 53, 0.08)' }}>
                   <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                    <span className="bg-chart-2 text-white rounded-md px-2 py-1 text-xs">B</span>
+                    <img src={bBlockIcon} alt="B" className="w-6 h-6" />
                     Behavior
                   </h3>
                   <p className="text-sm pl-9 whitespace-pre-wrap">
@@ -299,9 +388,9 @@ export default function RecordIncident() {
                   </p>
                 </div>
 
-                <div>
+                <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(249, 194, 55, 0.08)' }}>
                   <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                    <span className="bg-chart-3 text-white rounded-md px-2 py-1 text-xs">C</span>
+                    <img src={cBlockIcon} alt="C" className="w-6 h-6" />
                     Consequence
                   </h3>
                   <p className="text-sm pl-9 whitespace-pre-wrap">
@@ -334,35 +423,74 @@ export default function RecordIncident() {
                   </div>
                 )}
 
-                <div className="pt-4 border-t">
-                  <Button
-                    onClick={handleSaveIncident}
-                    disabled={isSaving || !formData.antecedent || !formData.behavior || !formData.consequence}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving Incident...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Save Incident
-                      </>
-                    )}
-                  </Button>
+                <Separator />
+
+                <div className="space-y-4">
+                  <Label className="text-lg">Signature</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="signature">Type your full name to sign</Label>
+                    <Input
+                      id="signature"
+                      placeholder="Your full name"
+                      value={signatureName}
+                      onChange={(e) => setSignatureName(e.target.value)}
+                      data-testid="input-signature"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t space-y-2">
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSaveDraft}
+                      disabled={isSaving || !formData.antecedent || !formData.behavior || !formData.consequence}
+                      variant="outline"
+                      className="flex-1"
+                      size="lg"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Draft"
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleSignAndSave}
+                      disabled={isSaving || !formData.antecedent || !formData.behavior || !formData.consequence || !signatureName.trim()}
+                      className="flex-1"
+                      size="lg"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <PenTool className="h-4 w-4 mr-2" />
+                          Save Incident
+                        </>
+                      )}
+                    </Button>
+                  </div>
                   {(!formData.antecedent || !formData.behavior || !formData.consequence) && (
-                    <p className="text-xs text-muted-foreground text-center mt-2">
+                    <p className="text-xs text-muted-foreground text-center">
                       Please ensure all ABC fields are filled before saving
+                    </p>
+                  )}
+                  {!signatureName.trim() && formData.antecedent && formData.behavior && formData.consequence && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Signature required to save incident
                     </p>
                   )}
                 </div>
               </CardContent>
             </Card>
           ) : (
-            <Card className="h-[600px] flex items-center justify-center">
+            <Card className="flex items-center justify-center" style={{ height: 'calc(100vh - 280px)', minHeight: '600px', overflow: 'auto' }}>
               <CardContent className="text-center">
                 <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="h-8 w-8 text-muted-foreground" />

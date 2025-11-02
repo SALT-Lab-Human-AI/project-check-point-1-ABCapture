@@ -4,7 +4,27 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { IncidentHistoryTable } from "@/components/incident-history-table";
 import { IncidentDetailModal } from "@/components/incident-detail-modal";
+import { ABCFormEdit } from "@/components/abc-form-edit";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Select,
@@ -36,6 +56,9 @@ export default function History() {
   const [behaviorTypeFilter, setBehaviorTypeFilter] = useState<string>("all");
   const [selectedIncident, setSelectedIncident] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingIncident, setEditingIncident] = useState<any>(null);
+  const [deleteIncidentId, setDeleteIncidentId] = useState<string | null>(null);
 
   const signIncidentMutation = useMutation({
     mutationFn: async ({ incidentId, signature }: { incidentId: number; signature: string }) => {
@@ -140,6 +163,99 @@ export default function History() {
     }
   };
 
+  const handleEditIncident = async (incidentId: string) => {
+    try {
+      // Fetch full incident data from API
+      const res = await apiRequest("GET", `/api/incidents/${incidentId}`);
+      const fullIncident = await res.json();
+      
+      const student = students.find(s => s.id === fullIncident.studentId);
+      setEditingIncident({
+        id: String(fullIncident.id),
+        studentName: student?.name || "Unknown Student",
+        date: new Date(fullIncident.date).toLocaleDateString(),
+        time: fullIncident.time,
+        summary: fullIncident.summary || "",
+        antecedent: fullIncident.antecedent || "",
+        behavior: fullIncident.behavior || "",
+        consequence: fullIncident.consequence || "",
+        incidentType: fullIncident.incidentType,
+        functionOfBehavior: fullIncident.functionOfBehavior || [],
+        status: fullIncident.status as "draft" | "signed",
+        signature: fullIncident.signature,
+        signedAt: fullIncident.signedAt,
+      });
+      setIsEditModalOpen(true);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load incident data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteIncident = (incidentId: string) => {
+    setDeleteIncidentId(incidentId);
+  };
+
+  const confirmDelete = useMutation({
+    mutationFn: async (incidentId: string) => {
+      await apiRequest("DELETE", `/api/incidents/${incidentId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Incident Deleted",
+        description: "The incident has been permanently deleted.",
+      });
+      // Invalidate all incident-related queries to update both history and student dashboards
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      setDeleteIncidentId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete incident",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const saveEditedIncident = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("PATCH", `/api/incidents/${data.id}`, {
+        summary: data.summary,
+        antecedent: data.antecedent,
+        behavior: data.behavior,
+        consequence: data.consequence,
+        incidentType: data.incidentType,
+        functionOfBehavior: data.functionOfBehavior,
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Incident Updated",
+        description: "The incident has been successfully updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      setIsEditModalOpen(false);
+      setEditingIncident(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update incident",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveEdit = (updatedData: any) => {
+    saveEditedIncident.mutate(updatedData);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -228,6 +344,8 @@ export default function History() {
               <IncidentHistoryTable
                 incidents={filteredIncidents}
                 onViewIncident={handleViewIncident}
+                onEditIncident={handleEditIncident}
+                onDeleteIncident={handleDeleteIncident}
               />
               <div className="text-sm text-muted-foreground">
                 Showing {filteredIncidents.length} of {incidents.length} total incidents
@@ -247,6 +365,45 @@ export default function History() {
         }}
         onSign={handleSignIncident}
       />
+
+      {/* Edit Incident Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+          {editingIncident && (
+            <div className="overflow-y-auto max-h-[90vh]">
+              <ABCFormEdit
+                data={editingIncident}
+                onSave={handleSaveEdit}
+                onCancel={() => {
+                  setIsEditModalOpen(false);
+                  setEditingIncident(null);
+                }}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteIncidentId} onOpenChange={() => setDeleteIncidentId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this incident report? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteIncidentId && confirmDelete.mutate(deleteIncidentId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

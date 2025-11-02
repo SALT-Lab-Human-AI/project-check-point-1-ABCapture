@@ -14,6 +14,9 @@ import {
 } from "@/components/ui/select";
 import { Calendar, Clock, X, PenTool, Check } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import aBlockIcon from "@assets/A Block.png";
+import bBlockIcon from "@assets/B Block.png";
+import cBlockIcon from "@assets/C Block.png";
 
 interface ABCFormData {
   id: string;
@@ -102,7 +105,7 @@ export function ABCFormEdit({ data, onSave, onCancel }: ABCFormEditProps) {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6" style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '600px', overflowY: 'auto' }}>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="date" className="flex items-center gap-2">
@@ -195,9 +198,9 @@ export function ABCFormEdit({ data, onSave, onCancel }: ABCFormEditProps) {
           <Separator />
 
           <div className="space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-2 p-4 rounded-lg" style={{ backgroundColor: 'rgba(248, 52, 34, 0.08)' }}>
               <Label htmlFor="antecedent" className="flex items-center gap-2 text-lg">
-                <span className="bg-chart-1 text-primary-foreground rounded-md px-2 py-1 text-sm">A</span>
+                <img src={aBlockIcon} alt="A" className="w-6 h-6" />
                 Antecedent
               </Label>
               <Textarea
@@ -213,9 +216,9 @@ export function ABCFormEdit({ data, onSave, onCancel }: ABCFormEditProps) {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 p-4 rounded-lg" style={{ backgroundColor: 'rgba(61, 148, 53, 0.08)' }}>
               <Label htmlFor="behavior" className="flex items-center gap-2 text-lg">
-                <span className="bg-chart-2 text-white rounded-md px-2 py-1 text-sm">B</span>
+                <img src={bBlockIcon} alt="B" className="w-6 h-6" />
                 Behavior
               </Label>
               <Textarea
@@ -231,9 +234,9 @@ export function ABCFormEdit({ data, onSave, onCancel }: ABCFormEditProps) {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 p-4 rounded-lg" style={{ backgroundColor: 'rgba(249, 194, 55, 0.08)' }}>
               <Label htmlFor="consequence" className="flex items-center gap-2 text-lg">
-                <span className="bg-chart-3 text-white rounded-md px-2 py-1 text-sm">C</span>
+                <img src={cBlockIcon} alt="C" className="w-6 h-6" />
                 Consequence
               </Label>
               <Textarea
@@ -250,63 +253,14 @@ export function ABCFormEdit({ data, onSave, onCancel }: ABCFormEditProps) {
             </div>
           </div>
 
-          <Separator />
-
-          <div className="space-y-4">
-            <Label className="text-lg">Signature</Label>
-            {formData.status === "signed" && formData.signature ? (
-              <Card className="p-4 bg-muted/30">
-                <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-chart-1" />
-                  <div>
-                    <p className="font-semibold">Signed by: {formData.signature}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formData.signedAt ? (
-                        <>
-                          {new Date(formData.signedAt).toLocaleDateString()} at {new Date(formData.signedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                        </>
-                      ) : (
-                        'Signature date unavailable'
-                      )}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signature">Type your full name to sign</Label>
-                  <Input
-                    id="signature"
-                    placeholder="Your full name"
-                    value={signatureName}
-                    onChange={(e) => setSignatureName(e.target.value)}
-                    data-testid="input-signature"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  onClick={handleSign}
-                  disabled={!signatureName.trim()}
-                  className="w-full"
-                  data-testid="button-sign-form"
-                >
-                  <PenTool className="h-4 w-4 mr-2" />
-                  Sign Form
-                </Button>
-              </div>
-            )}
-          </div>
         </CardContent>
         <CardFooter className="flex gap-2 justify-end">
           <Button type="button" variant="outline" onClick={onCancel} data-testid="button-cancel-edit">
-            {formData.status === "signed" ? "Close" : "Cancel"}
+            Cancel
           </Button>
-          {formData.status !== "signed" && (
-            <Button type="submit" data-testid="button-save-edit">
-              Save Changes
-            </Button>
-          )}
+          <Button type="submit" data-testid="button-save-edit">
+            Save Changes
+          </Button>
         </CardFooter>
       </form>
     </Card>

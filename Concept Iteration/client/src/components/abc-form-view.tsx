@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Tag, Target, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import aBlockIcon from "@assets/A Block.png";
+import bBlockIcon from "@assets/B Block.png";
+import cBlockIcon from "@assets/C Block.png";
 
 interface ABCFormData {
   id: string;
@@ -81,25 +84,25 @@ export function ABCFormView({ data, onSign, onEdit, isSaving = false }: ABCFormV
         <Separator />
 
         <div className="space-y-4">
-          <div>
+          <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(248, 52, 34, 0.08)' }}>
             <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-              <span className="bg-chart-1 text-primary-foreground rounded-md px-2 py-1 text-sm">A</span>
+              <img src={aBlockIcon} alt="A" className="w-6 h-6" />
               Antecedent
             </h3>
             <p className="text-sm pl-9">{data.antecedent}</p>
           </div>
 
-          <div>
+          <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(61, 148, 53, 0.08)' }}>
             <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-              <span className="bg-chart-2 text-white rounded-md px-2 py-1 text-sm">B</span>
+              <img src={bBlockIcon} alt="B" className="w-6 h-6" />
               Behavior
             </h3>
             <p className="text-sm pl-9">{data.behavior}</p>
           </div>
 
-          <div>
+          <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(249, 194, 55, 0.08)' }}>
             <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-              <span className="bg-chart-3 text-white rounded-md px-2 py-1 text-sm">C</span>
+              <img src={cBlockIcon} alt="C" className="w-6 h-6" />
               Consequence
             </h3>
             <p className="text-sm pl-9">{data.consequence}</p>
