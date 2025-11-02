@@ -446,18 +446,16 @@ export default function History() {
 
       {/* Edit Incident Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
           {editingIncident && (
-            <div className="overflow-y-auto max-h-[90vh]">
-              <ABCFormEdit
-                data={editingIncident}
-                onSave={handleSaveEdit}
-                onCancel={() => {
-                  setIsEditModalOpen(false);
-                  setEditingIncident(null);
-                }}
-              />
-            </div>
+            <ABCFormEdit
+              data={editingIncident}
+              onSave={handleSaveEdit}
+              onCancel={() => {
+                setIsEditModalOpen(false);
+                setEditingIncident(null);
+              }}
+            />
           )}
         </DialogContent>
       </Dialog>
