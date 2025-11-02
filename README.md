@@ -1,4 +1,8 @@
-<img width="288" height="68" alt="Screenshot 2025-10-15 at 5 40 14 PM" src="https://github.com/user-attachments/assets/9aac386a-a5ee-4a27-860c-a7a9803059e4" />
+<img 
+  src="https://raw.githubusercontent.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/main/Concept%20Iteration/attached_assets/ABCapture%20logo.png" 
+  width="350" 
+  alt="ABCapture logo"
+/>
 
 
 # ABCapture: An AI-Powered Tool to Support Adults Working With Children With Autism
@@ -17,8 +21,50 @@ The core tasks include logging incidents quickly through voice-to-text, generati
 - Behavior analytic tools commonly use ABC (Antecedent-Behavior-Consequence) data collection frameworks but remain manual and fragmented, rarely integrated into a seamless AI-powered workflow for teachers [(Nebraska Autism Spectrum Disorders Network, 2018).](https://asdnetwork.unl.edu/virtual-strategies/abc-data/)
 - Some AI interventions focus on improving engagement via interactive games, virtual reality, or robots, but they do not address efficient, accurate record-keeping or teacher workflows [(Li et al., 2024).](https://www-tandfonline-com.proxy2.library.illinois.edu/doi/full/10.1080/1034912X.2013.846470)
 
-### Initial concept and value proposition
-Our initial concept is to build a simple AI-powered tool with two main features: a **Voice-to-Text Incident Logger with Auto-Summary** and an **AI Document/File Organizer that Tags & Summarizes Notes**. Teachers can press a button, describe what happened, and instantly get both a transcript and a short summary of the conflict. The system will then store the record, add tags such as student name, type of conflict, and date, and keep everything organized in one place for easy searching and reviewing. This creates clearer communication with specialists and parents, makes support plans more effective, and turns documentation into a quick, reliable process instead of a stressful chore.
+
+### Our Concept and Value Proposition
+
+**ABCapture** streamlines the incident reporting and logging process by:
+1. Using AI to guide teachers through structured data collection
+2. Automatically extracting ABC data components from natural language descriptions
+3. Organizing incidents with visual block indicators for each ABC data component
+4. Providing analytics to identify behavior patterns and functions
+5. Generating professional reports for parents and specialists
+
+### Understanding ABC Data Collection
+
+**What is ABC Data?**
+
+ABC data is a systematic observation method used in Applied Behavior Analysis (ABA) to understand the context and function of behaviors. It’s a cornerstone of behavioral documentation in special education, helping educators and specialists identify patterns and develop effective intervention strategies [(Nebraska Autism Spectrum Disorders Network, 2018).](https://asdnetwork.unl.edu/virtual-strategies/abc-data/)
+
+**The Three Components:**
+
+ **Antecedent** (What happened BEFORE)
+- The trigger or event that occurred immediately before the behavior
+- Environmental factors, activities, or interactions that set the stage
+- Helps identify what prompts or precipitates the behavior
+- *Example:* "Teacher asked student to transition from recess to math class”
+
+ **Behavior** (What ACTUALLY happened)
+- The observable, measurable action or response
+- Should be described objectively without interpretation
+- Include duration, intensity, and specific details
+- *Example:* "Student threw pencil across room, yelled 'I hate math!' and pushed desk”
+
+ **Consequence** (What happened AFTER)
+- The response or outcome following the behavior
+- How adults, peers, or environment reacted
+- Helps understand what maintains or reinforces the behavior
+- *Example:* "Student was removed from classroom, missed math lesson, received one-on-one attention from counselor”
+
+**Why ABC Data Matters:**
+
+- **Identify Patterns:** Recognize triggers and environmental factors that contribute to behaviors
+- **Understand Function:** Determine why behaviors occur (escape, attention, sensory, tangible)
+- **Develop Interventions:** Create targeted, evidence-based behavior support plans
+- **Track Progress:** Monitor effectiveness of interventions over time
+- **Collaborate Effectively:** Share objective data with teams, parents, and specialists
+- **Legal Documentation:** Maintain required records for IEPs and behavior plans
 
 ### Milestones & roles
 
@@ -69,15 +115,30 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 - **Jiya**: Created **Opportunity Framing** based on all above results and findings.
 - **Rithika**: Worked on the task flows and key screens sections of **DESIGN_SPEC.md**
 - **Sara**: Worked on the user journeys section of **DESIGN_SPEC.md**
-- **All Members**: Contributed to the **initial prototype** through a 3-hour collaborative coding session in Replit conducted via Zoom. 
+- **All Members**: Contributed to the **initial prototype** through a 3.5 hour collaborative coding session in Replit conducted via Zoom. 
 
 ---
 
-**Checkpoint 3: Working Implementation & Live Demo (Planned)**
-- **Jiya**: Will implement the **Voice-to-Text Incident Logger**, integrating speech-to-text and auto-summary functionality. Will update setup and run instructions in the README.  
-- **Sara**: Will develop the **AI Document/File Organizer** with smart tagging logic, and create the **system architecture diagram** along with privacy & safety documentation.  
-- **Manuela**: Will focus on **UI/UX design** and front-end layout, conduct usability testing, and prepare the **demo walkthrough presentation**.  
-- **Rithika**: Will handle **back-end integration** between the logger and organizer modules, create **sample datasets** for the demo, and assist with final testing and debugging.  
+**Checkpoint 3: Working Implementation & Live Demo**
+- **All Members**: Collaborated on building a full-stack working prototype with comprehensive features
+- **Jiya**:
+- **Manuela**:
+- **Rithika**:
+- **Sara**:
+
+**Key Features Implemented:**
+- ✅ AI-powered chatbot for incident recording (Groq Llama 3.3 70B)
+- ✅ Voice-to-text transcription with PII protection (Groq Whisper)
+- ✅ Automatic ABC data extraction from natural language
+- ✅ Student profiles with colorful avatar icons
+- ✅ Comprehensive analytics (14-day trends, function analysis, week-over-week comparison)
+- ✅ Draft and signed incident status with digital signatures
+- ✅ Parent email communication system
+- ✅ Privacy mode for presentations
+- ✅ Role-based access (Teacher/Administrator)
+- ✅ Advanced filtering (status, grade, behavior type)
+- ✅ Export and print functionality
+- ✅ Responsive design for mobile and desktop
 
 ---
 
@@ -86,5 +147,3 @@ Our initial concept is to build a simple AI-powered tool with two main features:
 - **Sara**: Will edit and compile the **Final Report** (3,500–4,500 words), write the **Related Work** and **Future Work** sections, and manage final formatting and submission.  
 - **Manuela**: Will synthesize qualitative feedback, design **charts and visuals** for the report, and help prepare the **final presentation**.  
 - **Rithika**: Will consolidate all **final deliverables** (code, cleaned data, scripts, and prompt files), document **Methodology** and **Risks & Limitations**, and ensure reproducibility.  
-
----
