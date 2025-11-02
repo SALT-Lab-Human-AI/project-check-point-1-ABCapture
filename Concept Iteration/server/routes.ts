@@ -278,14 +278,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.session as any).userId as string;
       const id = Number(req.params.id);
-      console.log("[DELETE Incident] ID:", id, "User:", userId);
-      const success = await storage.deleteIncident(id, userId);
-      if (!success) {
-        console.log("[DELETE Incident] Not found");
+      console.log("[DELETE Incident] Request received - ID:", id, "User:", userId, "Method:", req.method, "Path:", req.path);
+      
+      if (!userId) {
+        console.error("[DELETE Incident] No userId in session");
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (isNaN(id)) {
+        console.error("[DELETE Incident] Invalid ID:", req.params.id);
+        return res.status(400).json({ message: "Invalid incident ID" });
+      }
+      
+      // Check if incident exists and belongs to user
+      const incident = await storage.getIncident(id, userId);
+      if (!incident) {
+        console.log("[DELETE Incident] Incident not found:", id);
         return res.status(404).json({ message: "Incident not found" });
       }
-      console.log("[DELETE Incident] Success");
-      res.json({ message: "Incident deleted successfully" });
+      
+      // Only allow deletion of draft incidents
+      if (incident.status !== "draft") {
+        console.log("[DELETE Incident] Cannot delete signed incident:", id);
+        return res.status(400).json({ message: "Only draft incidents can be deleted" });
+      }
+      
+      const deleted = await storage.deleteIncident(id, userId);
+      if (!deleted) {
+        console.error("[DELETE Incident] Delete operation returned false");
+        return res.status(500).json({ message: "Failed to delete incident" });
+      }
+      
+      console.log("[DELETE Incident] Success: Deleted incident", id);
+      res.status(200).json({ message: "Incident deleted successfully" });
     } catch (err: any) {
       console.error("[DELETE Incident] Error:", err);
       res.status(500).json({ message: err.message || "Failed to delete incident" });

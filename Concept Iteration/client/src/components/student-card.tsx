@@ -10,8 +10,9 @@ interface StudentCardProps {
   grade?: string;
   photoUrl?: string;
   incidentCount: number;
+  recentCount?: number;
   lastIncident?: string;
-  status?: "calm" | "elevated" | "critical";
+  hasRecentIncident?: boolean;
 }
 
 export function StudentCard({
@@ -20,17 +21,16 @@ export function StudentCard({
   grade,
   photoUrl,
   incidentCount,
+  recentCount,
   lastIncident,
-  status = "calm",
+  hasRecentIncident = false,
 }: StudentCardProps) {
   const { blurText, blurInitials } = usePrivacy();
-  const statusColors = {
-    calm: "bg-chart-2",
-    elevated: "bg-chart-3",
-    critical: "bg-destructive",
-  };
   const initials = blurInitials(name);
   const displayName = blurText(name);
+
+  // Yellow if incident in last week, green otherwise
+  const badgeColor = hasRecentIncident ? "bg-yellow-500 hover:bg-yellow-600" : "bg-chart-2 hover:bg-chart-2/90";
 
   return (
     <Link href={`/students/${id}`}>
@@ -48,17 +48,24 @@ export function StudentCard({
                 <h3 className="font-semibold text-lg truncate" data-testid={`text-student-name-${id}`}>
                   {displayName}
                 </h3>
-                <Badge variant="outline" className={`text-xs ${statusColors[status]} text-white border-0`}>
-                  {status}
-                </Badge>
               </div>
               {grade && (
                 <p className="text-sm text-muted-foreground">Grade {grade}</p>
               )}
               <div className="flex items-center gap-2 mt-2">
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className={`text-xs text-white border-0 ${badgeColor}`}>
                   {incidentCount} {incidentCount === 1 ? "incident" : "incidents"}
+                  {recentCount !== undefined && recentCount < incidentCount && (
+                    <span className="ml-1 opacity-75">
+                      (last 7 days)
+                    </span>
+                  )}
                 </Badge>
+                {recentCount !== undefined && recentCount < incidentCount && (
+                  <span className="text-xs text-muted-foreground" title={`${recentCount} incidents in last 7 days, ${incidentCount} total`}>
+                    {recentCount} this week
+                  </span>
+                )}
               </div>
               {lastIncident && (
                 <p className="text-xs text-muted-foreground mt-1">

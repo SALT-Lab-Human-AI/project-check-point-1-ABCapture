@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useSearch } from "wouter";
 import {
   Select,
   SelectContent,
@@ -50,15 +51,22 @@ type ApiIncident = {
 export default function History() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const search = useSearch();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [behaviorTypeFilter, setBehaviorTypeFilter] = useState<string>("all");
   const [selectedIncident, setSelectedIncident] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingIncident, setEditingIncident] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deleteIncidentId, setDeleteIncidentId] = useState<string | null>(null);
+  
+  // Get student filter from URL
+  const studentFilterId = (() => {
+    const studentIdParam = new URLSearchParams(search).get("student");
+    return studentIdParam ? parseInt(studentIdParam, 10) : null;
+  })();
 
   const signIncidentMutation = useMutation({
     mutationFn: async ({ incidentId, signature }: { incidentId: number; signature: string }) => {
@@ -85,9 +93,65 @@ export default function History() {
     },
   });
 
+  const deleteIncidentMutation = useMutation({
+    mutationFn: async (incidentId: number) => {
+      try {
+        const res = await apiRequest("DELETE", `/api/incidents/${incidentId}`);
+        // Check if response is HTML (means route not found or error)
+        const text = await res.text();
+        
+        if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+          console.error("[Delete Incident] Received HTML response instead of JSON - route may not be found");
+          throw new Error("Server returned HTML instead of JSON. The delete route may not be working correctly.");
+        }
+        
+        // Try to parse as JSON
+        if (text && text.trim()) {
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            console.error("[Delete Incident] JSON parse error:", e, "Response text:", text.substring(0, 200));
+            throw new Error("Invalid response from server");
+          }
+        }
+        // Empty response means success
+        return { message: "Incident deleted successfully" };
+      } catch (error: any) {
+        // Re-throw to trigger onError handler
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Incident Deleted",
+        description: "The incident has been deleted successfully.",
+      });
+      // Force refresh the incidents list - use both invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      queryClient.refetchQueries({ queryKey: ["/api/incidents"] });
+      // Also refresh if filtering by student
+      const studentIdParam = new URLSearchParams(search).get("student");
+      if (studentIdParam) {
+        const studentId = parseInt(studentIdParam, 10);
+        queryClient.invalidateQueries({ queryKey: [`/api/incidents?studentId=${studentId}`] });
+      }
+      setIsDetailModalOpen(false);
+      setSelectedIncident(null);
+    },
+    onError: (error: any) => {
+      console.error("[Delete Incident] Error:", error);
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete incident. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSignIncident = (incidentId: number, signature: string) => {
     signIncidentMutation.mutate({ incidentId, signature });
   };
+
 
   // Fetch students and incidents from API
   const { data: students = [], isLoading: studentsLoading } = useQuery<ApiStudent[]>({
@@ -107,6 +171,11 @@ export default function History() {
   // Map incidents to include student names and filter by grade and behavior type
   const incidentsWithStudentNames = incidents
     .filter(incident => {
+      // Filter by specific student if student ID is in URL
+      if (studentFilterId !== null && incident.studentId !== studentFilterId) {
+        return false;
+      }
+      
       // Filter by grade if administrator
       if (user?.role === "administrator" && gradeFilter !== "all") {
         const student = students.find(s => s.id === incident.studentId);
@@ -125,12 +194,12 @@ export default function History() {
       return {
         id: String(incident.id),
         studentName: student?.name || "Unknown Student",
-      date: new Date(incident.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      time: incident.time,
-      incidentType: incident.incidentType,
-      functionOfBehavior: incident.functionOfBehavior,
-      status: incident.status as "signed" | "draft",
-    };
+        date: new Date(incident.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        time: incident.time,
+        incidentType: incident.incidentType,
+        functionOfBehavior: incident.functionOfBehavior,
+        status: incident.status as "signed" | "draft",
+      };
   });
 
   // Sort by date (most recent first)
@@ -195,7 +264,7 @@ export default function History() {
     }
   };
 
-  const handleDeleteIncident = (incidentId: string) => {
+  const handleDeleteClick = (incidentId: string) => {
     setDeleteIncidentId(incidentId);
   };
 
@@ -256,12 +325,19 @@ export default function History() {
     saveEditedIncident.mutate(updatedData);
   };
 
+  // Get student name if filtering by specific student
+  const filteredStudent = studentFilterId 
+    ? students.find(s => s.id === studentFilterId)
+    : null;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Incident History</h1>
         <p className="text-muted-foreground mt-1">
-          View and manage all recorded incidents
+          {filteredStudent 
+            ? `Viewing incidents for ${filteredStudent.name}`
+            : "View and manage all recorded incidents"}
         </p>
       </div>
 
@@ -345,7 +421,7 @@ export default function History() {
                 incidents={filteredIncidents}
                 onViewIncident={handleViewIncident}
                 onEditIncident={handleEditIncident}
-                onDeleteIncident={handleDeleteIncident}
+                onDeleteIncident={handleDeleteClick}
               />
               <div className="text-sm text-muted-foreground">
                 Showing {filteredIncidents.length} of {incidents.length} total incidents
@@ -364,6 +440,7 @@ export default function History() {
           setSelectedIncident(null);
         }}
         onSign={handleSignIncident}
+        onDelete={selectedIncident?.status === 'draft' ? () => handleDeleteClick(String(selectedIncident.id)) : undefined}
       />
 
       {/* Edit Incident Modal */}

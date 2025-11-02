@@ -118,12 +118,18 @@ export default function Dashboard() {
       return aHour - bHour;
     });
 
-  // Calculate critical students (>5 incidents)
-  const studentIncidentCounts: Record<number, number> = {};
+  // Calculate students with incidents in last 7 days (for yellow badge)
+  const now = new Date();
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const studentsWithRecentIncidents = new Set<number>();
   incidents.forEach(inc => {
-    studentIncidentCounts[inc.studentId] = (studentIncidentCounts[inc.studentId] || 0) + 1;
+    const incidentDate = new Date(inc.createdAt);
+    if (incidentDate >= sevenDaysAgo) {
+      studentsWithRecentIncidents.add(inc.studentId);
+    }
   });
-  const criticalStudents = Object.values(studentIncidentCounts).filter(count => count > 5).length;
+  const studentsWithIncidentsThisWeek = studentsWithRecentIncidents.size;
 
   const handleSendToSpecialist = () => {
     toast({
@@ -220,15 +226,15 @@ export default function Dashboard() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Critical Status</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <CardTitle className="text-sm font-medium">This Week</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-yellow-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-destructive" data-testid="text-critical-students">
-                  {criticalStudents}
+                <div className="text-2xl font-bold text-yellow-500" data-testid="text-critical-students">
+                  {studentsWithIncidentsThisWeek}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {criticalStudents === 0 ? "All students calm" : "Needs attention"}
+                  {studentsWithIncidentsThisWeek === 0 ? "No incidents this week" : "Students with incidents"}
                 </p>
               </CardContent>
             </Card>
