@@ -82,7 +82,6 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
   };
 
   const toggleFunction = (func: string) => {
-    if (formData.status === "signed") return; // Prevent changes when signed
     setSelectedFunctions((prev) =>
       prev.includes(func)
         ? prev.filter((f) => f !== func)
@@ -90,7 +89,8 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
     );
   };
 
-  const isLocked = formData.status === "signed";
+  // Allow editing of all incidents (both draft and signed)
+  const isLocked = false;
 
   return (
     <Card>

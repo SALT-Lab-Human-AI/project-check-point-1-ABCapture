@@ -7,6 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Eye, Edit, Trash2, MoreVertical } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -94,8 +95,14 @@ export function IncidentHistoryTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={incident.status === "signed" ? "default" : "secondary"}>
-                    {incident.status === "signed" ? "Signed" : "Draft"}
+                  <Badge 
+                    variant={incident.status === 'signed' ? 'default' : 'secondary'}
+                    className={cn(
+                      'text-xs',
+                      incident.status === 'draft' && 'bg-yellow-100 text-yellow-800'
+                    )}
+                  >
+                    {incident.status === 'signed' ? 'Signed' : 'Draft'}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">

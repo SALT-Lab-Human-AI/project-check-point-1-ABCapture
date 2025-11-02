@@ -179,3 +179,28 @@ export const insertIncidentSchema = createInsertSchema(incidents).omit({
 export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 export type Incident = typeof incidents.$inferSelect;
 export const updateIncidentSchema = insertIncidentSchema.partial();
+
+// Incident edit history table
+export const incidentEditHistory = pgTable(
+  "incident_edit_history",
+  {
+    id: serial("id").primaryKey(),
+    incidentId: integer("incident_id").notNull().references(() => incidents.id, { onDelete: "cascade" }),
+    userId: varchar("user_id").notNull().references(() => users.id),
+    editedAt: timestamp("edited_at").defaultNow().notNull(),
+    changes: jsonb("changes").notNull(),
+    editedByName: varchar("edited_by_name"),
+  },
+  (table) => [
+    index("idx_incident_edit_history_incident_id").on(table.incidentId),
+    index("idx_incident_edit_history_edited_at").on(table.editedAt),
+  ],
+);
+
+export const insertIncidentEditHistorySchema = createInsertSchema(incidentEditHistory).omit({
+  id: true,
+  editedAt: true,
+});
+
+export type InsertIncidentEditHistory = z.infer<typeof insertIncidentEditHistorySchema>;
+export type IncidentEditHistory = typeof incidentEditHistory.$inferSelect;

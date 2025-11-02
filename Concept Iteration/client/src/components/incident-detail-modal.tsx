@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,10 @@ import {
   Printer,
   X,
   FileSignature,
-  Trash2
+  Trash2,
+  History,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import aBlockIcon from "../../../attached_assets/A Block.png";
 import bBlockIcon from "../../../attached_assets/B Block.png";
@@ -51,6 +55,18 @@ interface IncidentDetailModalProps {
 
 export function IncidentDetailModal({ incident, open, onClose, onSign, onDelete }: IncidentDetailModalProps) {
   const [signature, setSignature] = useState("");
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Fetch edit history for this incident
+  const { data: editHistory = [], isLoading: historyLoading } = useQuery<any[]>({
+    queryKey: [`/api/incidents/${incident?.id}/history`],
+    enabled: !!incident?.id && open,
+  });
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[IncidentDetailModal] Edit History:', editHistory, 'Loading:', historyLoading, 'Incident ID:', incident?.id);
+  }, [editHistory, historyLoading, incident?.id]);
   
   if (!incident) return null;
 
@@ -264,6 +280,67 @@ Status: ${incident.status}
                 </div>
               )}
             </div>
+          </div>
+
+          <Separator />
+
+          {/* Edit History */}
+          <Separator />
+          <div>
+            <Button
+              variant="ghost"
+              className="w-full justify-between"
+              onClick={() => setShowHistory(!showHistory)}
+            >
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                <span className="font-semibold">Edit History ({editHistory.length})</span>
+              </div>
+              {showHistory ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+            
+            {showHistory && (
+              <div className="mt-4">
+                {historyLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading edit history...</p>
+                ) : editHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No edits have been made to this incident yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {editHistory.map((edit) => (
+                      <div key={edit.id} className="border rounded-lg p-3 bg-muted/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">{edit.editedByName || 'Unknown User'}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(edit.editedAt).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          {Object.entries(edit.changes as Record<string, { old: any; new: any }>).map(([field, change]) => (
+                            <div key={field} className="text-xs">
+                              <span className="font-medium capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                              <div className="ml-4 mt-1">
+                                <div className="text-red-600">
+                                  <span className="font-medium">- </span>
+                                  {typeof change.old === 'object' ? JSON.stringify(change.old) : String(change.old)}
+                                </div>
+                                <div className="text-green-600">
+                                  <span className="font-medium">+ </span>
+                                  {typeof change.new === 'object' ? JSON.stringify(change.new) : String(change.new)}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <Separator />

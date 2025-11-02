@@ -8,6 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   ArrowLeft, 
   Plus, 
@@ -21,8 +27,11 @@ import {
   Trash2,
   Share2,
   Edit,
-  FileSignature
+  FileSignature,
+  MoreHorizontal,
+  Eye,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +55,8 @@ import {
 import { usePrivacy } from "@/contexts/privacy-context";
 import { useToast } from "@/hooks/use-toast";
 import { getStudentAvatar } from "@/lib/utils";
+import { IncidentDetailModal } from "@/components/incident-detail-modal";
+import { ABCFormEdit } from "@/components/abc-form-edit";
 
 type ApiStudent = { id: number; name: string; grade: string | null; userId: string; createdAt: string; photoUrl?: string };
 type ApiIncident = {
@@ -181,6 +192,40 @@ export default function StudentDetail() {
     },
   });
 
+  const editIncidentMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("PATCH", `/api/incidents/${data.id}`, {
+        summary: data.summary,
+        antecedent: data.antecedent,
+        behavior: data.behavior,
+        consequence: data.consequence,
+        incidentType: data.incidentType,
+        functionOfBehavior: data.functionOfBehavior,
+        date: data.date,
+        time: data.time,
+        signature: data.signature,
+        status: data.status,
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Incident Updated",
+        description: "The incident has been successfully updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/incidents?studentId=${studentId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+      setEditingIncidentId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update incident",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSignIncident = (incidentId: number, signature: string) => {
     signIncidentMutation.mutate({ incidentId, signature });
   };
@@ -189,6 +234,21 @@ export default function StudentDetail() {
     if (window.confirm("Are you sure you want to delete this incident? This action cannot be undone.")) {
       deleteIncidentMutation.mutate(incidentId);
     }
+  };
+
+  const handleDeleteClick = (incidentId: string) => {
+    handleDeleteIncident(Number(incidentId));
+  };
+
+  const handleViewIncident = (incidentId: number) => {
+    // Navigate to the incident view page or open a dialog
+    // For now, we'll just set it as the editing incident to view it
+    setEditingIncidentId(incidentId);
+  };
+
+  const handleSaveEdit = (updatedData: any) => {
+    console.log('[handleSaveEdit] Saving incident with data:', updatedData);
+    editIncidentMutation.mutate(updatedData);
   };
 
   // Fetch student data from API
@@ -258,8 +318,10 @@ export default function StudentDetail() {
   });
   const behaviorTypeData = Object.entries(typeCount).map(([type, count]) => ({ type, count }));
 
-  // Get recent incidents (last 3)
-  const recentIncidents = incidents.slice(0, 3);
+  // Get recent incidents (last 3) - show both signed and draft incidents
+  const recentIncidents = [...incidents]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 3);
 
   const initials = blurInitials(student.name);
   const displayName = blurText(student.name);
@@ -452,143 +514,34 @@ export default function StudentDetail() {
             {/* Edit/Sign Incident Dialog */}
             <Dialog open={editingIncidentId !== null} onOpenChange={(open) => !open && setEditingIncidentId(null)}>
               <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>
-                    {incidents.find(i => i.id === editingIncidentId)?.status === 'draft' 
-                      ? 'Review and Sign Incident' 
-                      : 'Edit Incident'}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {incidents.find(i => i.id === editingIncidentId)?.status === 'draft'
-                      ? 'Please review the incident details and add your signature to finalize.'
-                      : 'Update the incident details as needed.'}
-                  </DialogDescription>
-                </DialogHeader>
                 {editingIncidentId && (() => {
                   const incident = incidents.find(i => i.id === editingIncidentId);
                   if (!incident) return null;
                   
                   return (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Date</Label>
-                          <Input type="date" defaultValue={incident.date} disabled />
-                        </div>
-                        <div>
-                          <Label>Time</Label>
-                          <Input type="time" defaultValue={incident.time} disabled />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label>Summary</Label>
-                        <p className="text-sm p-3 bg-muted rounded-md">{incident.summary}</p>
-                      </div>
-                      
-                      <div>
-                        <Label>Antecedent (What happened before?)</Label>
-                        <p className="text-sm p-3 bg-muted rounded-md">{incident.antecedent}</p>
-                      </div>
-                      
-                      <div>
-                        <Label>Behavior (What did the student do?)</Label>
-                        <p className="text-sm p-3 bg-muted rounded-md">{incident.behavior}</p>
-                      </div>
-                      
-                      <div>
-                        <Label>Consequence (What happened after?)</Label>
-                        <p className="text-sm p-3 bg-muted rounded-md">{incident.consequence}</p>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Incident Type</Label>
-                          <p className="text-sm p-3 bg-muted rounded-md">{incident.incidentType}</p>
-                        </div>
-                        <div>
-                          <Label>Function of Behavior</Label>
-                          <div className="flex flex-wrap gap-1 p-3 bg-muted rounded-md">
-                            {incident.functionOfBehavior.map((func, i) => (
-                              <Badge key={i} variant="secondary">{func}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {incident.status === 'draft' && (
-                        <div className="border-t pt-4">
-                          <Label htmlFor="signature">Signature *</Label>
-                          <Input
-                            id="signature"
-                            placeholder="Type your full name to sign"
-                            className="mt-2"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                                handleSignIncident(incident.id, e.currentTarget.value.trim());
-                              }
-                            }}
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            By signing, you confirm that the information above is accurate.
-                          </p>
-                        </div>
-                      )}
-                      
-                      {incident.status === 'signed' && incident.signature && (
-                        <div className="border-t pt-4">
-                          <Label>Signed By</Label>
-                          <div className="flex items-center gap-2 mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
-                            <FileSignature className="h-4 w-4 text-green-600" />
-                            <div>
-                              <p className="text-sm font-medium text-green-900">{incident.signature}</p>
-                              <p className="text-xs text-green-700">
-                                {incident.signedAt && new Date(incident.signedAt).toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="flex justify-between items-center pt-4">
-                        {incident.status === 'draft' && (
-                          <Button
-                            variant="destructive"
-                            onClick={() => handleDeleteIncident(incident.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </Button>
-                        )}
-                        <div className="flex gap-2 ml-auto">
-                          <Button
-                            variant="outline"
-                            onClick={() => setEditingIncidentId(null)}
-                          >
-                            {incident.status === 'draft' ? 'Cancel' : 'Close'}
-                          </Button>
-                          {incident.status === 'draft' && (
-                            <Button
-                              onClick={() => {
-                                const input = document.getElementById('signature') as HTMLInputElement;
-                                if (input?.value.trim()) {
-                                  handleSignIncident(incident.id, input.value.trim());
-                                } else {
-                                  toast({
-                                    title: "Signature Required",
-                                    description: "Please enter your full name to sign the incident.",
-                                    variant: "destructive",
-                                  });
-                                }
-                              }}
-                            >
-                              <FileSignature className="h-4 w-4 mr-2" />
-                              Sign Incident
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <ABCFormEdit
+                      data={{
+                        id: String(incident.id),
+                        studentName: student.name,
+                        date: incident.date,
+                        time: incident.time,
+                        summary: incident.summary,
+                        antecedent: incident.antecedent,
+                        behavior: incident.behavior,
+                        consequence: incident.consequence,
+                        incidentType: incident.incidentType,
+                        functionOfBehavior: incident.functionOfBehavior,
+                        status: incident.status,
+                        signature: incident.signature,
+                        signedAt: incident.signedAt,
+                      }}
+                      onSave={handleSaveEdit}
+                      onCancel={() => setEditingIncidentId(null)}
+                      onDelete={() => {
+                        handleDeleteIncident(incident.id);
+                        setEditingIncidentId(null);
+                      }}
+                    />
                   );
                 })()}
               </DialogContent>
@@ -772,16 +725,31 @@ export default function StudentDetail() {
                   data-testid={`incident-${incident.id}`}
                 >
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline">{incident.incidentType}</Badge>
-                      {incident.status === 'draft' && (
-                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                          <FileSignature className="h-3 w-3 mr-1" />
-                          Draft - Needs Signature
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {/* Type */}
+                      <Badge variant="outline" className="text-xs">
+                        {incident.incidentType}
+                      </Badge>
+                      
+                      {/* Function of Behavior */}
+                      {incident.functionOfBehavior?.map((func) => (
+                        <Badge key={func} variant="outline" className="text-xs">
+                          {func}
                         </Badge>
-                      )}
+                      ))}
+                      
+                      {/* Status */}
+                      <Badge 
+                        variant={incident.status === 'signed' ? 'default' : 'secondary'}
+                        className={cn(
+                          'text-xs',
+                          incident.status === 'draft' && 'bg-yellow-100 text-yellow-800'
+                        )}
+                      >
+                        {incident.status === 'signed' ? 'Signed' : 'Draft'}
+                      </Badge>
                       {incident.location && (
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {incident.location}
                         </span>
                       )}
@@ -794,14 +762,31 @@ export default function StudentDetail() {
                       <span>{incident.time}</span>
                     </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingIncidentId(incident.id)}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    {incident.status === 'draft' ? 'Review & Sign' : 'Edit'}
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Actions</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleViewIncident(incident.id)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setEditingIncidentId(incident.id)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        {incident.status === 'draft' ? 'Review & Sign' : 'Edit'}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-red-600 focus:text-red-600"
+                        onClick={() => handleDeleteClick(incident.id.toString())}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ))
             )}

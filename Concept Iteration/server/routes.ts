@@ -261,7 +261,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("[PATCH Incident] ID:", id, "User:", userId, "Body:", req.body);
       const data = updateIncidentSchema.parse(req.body);
       console.log("[PATCH Incident] Parsed data:", data);
-      const row = await storage.updateIncident(id, userId, data);
+      
+      // Get user info for edit history
+      const user = await storage.getUser(userId);
+      const editedByName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : undefined;
+      
+      const row = await storage.updateIncident(id, userId, data, editedByName);
       if (!row) {
         console.log("[PATCH Incident] Not found");
         return res.status(404).json({ message: "Not found" });
@@ -271,6 +276,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err: any) {
       console.error("[PATCH Incident] Error:", err);
       res.status(400).json({ message: err.message || "Invalid incident data" });
+    }
+  });
+
+  app.get("/api/incidents/:id/history", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      const id = Number(req.params.id);
+      const history = await storage.getIncidentEditHistory(id, userId);
+      res.json(history);
+    } catch (err: any) {
+      console.error("[GET Incident History] Error:", err);
+      res.status(400).json({ message: err.message || "Failed to fetch edit history" });
     }
   });
 

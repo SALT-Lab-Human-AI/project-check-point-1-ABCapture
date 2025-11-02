@@ -1,6 +1,6 @@
-import { users, students, incidents, type User, type InsertUser, type UpdateUser, type Student, type InsertStudent, type Incident, type InsertIncident } from "@shared/schema";
+import { users, students, incidents, incidentEditHistory, type User, type InsertUser, type UpdateUser, type Student, type InsertStudent, type Incident, type InsertIncident, type InsertIncidentEditHistory } from "@shared/schema";
 import { db } from "./db";
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -23,8 +23,9 @@ export interface IStorage {
   listIncidents(userId: string, studentId?: number): Promise<Incident[]>;
   getIncident(id: number, userId: string): Promise<Incident | undefined>;
   createIncident(userId: string, data: InsertIncident): Promise<Incident>;
-  updateIncident(id: number, userId: string, data: Partial<InsertIncident>): Promise<Incident | undefined>;
+  updateIncident(id: number, userId: string, data: Partial<InsertIncident>, editedByName?: string): Promise<Incident | undefined>;
   deleteIncident(id: number, userId: string): Promise<boolean>;
+  getIncidentEditHistory(incidentId: number, userId: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -237,12 +238,52 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
-  async updateIncident(id: number, userId: string, data: Partial<InsertIncident>): Promise<Incident | undefined> {
+  async updateIncident(id: number, userId: string, data: Partial<InsertIncident>, editedByName?: string): Promise<Incident | undefined> {
+    // Get the original incident before updating
+    const [original] = await db
+      .select()
+      .from(incidents)
+      .where(and(eq(incidents.id, id), eq(incidents.userId, userId)));
+    
+    if (!original) return undefined;
+
+    // Update the incident
     const [row] = await db
       .update(incidents)
-      .set({ ...data })
+      .set({ ...data, updatedAt: new Date() })
       .where(and(eq(incidents.id, id), eq(incidents.userId, userId)))
       .returning();
+    
+    // Record edit history if there were actual changes
+    if (row && Object.keys(data).length > 0) {
+      const changes: Record<string, { old: any; new: any }> = {};
+      
+      console.log('[updateIncident] Checking for changes. Data keys:', Object.keys(data));
+      
+      for (const [key, newValue] of Object.entries(data)) {
+        const oldValue = original[key as keyof typeof original];
+        // Only record if value actually changed
+        if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+          console.log(`[updateIncident] Change detected in ${key}:`, { old: oldValue, new: newValue });
+          changes[key] = { old: oldValue, new: newValue };
+        }
+      }
+      
+      // Only insert history if there were actual changes
+      if (Object.keys(changes).length > 0) {
+        console.log('[updateIncident] Inserting edit history:', { incidentId: id, changes, editedByName });
+        const result = await db.insert(incidentEditHistory).values({
+          incidentId: id,
+          userId,
+          changes,
+          editedByName,
+        });
+        console.log('[updateIncident] Edit history inserted:', result);
+      } else {
+        console.log('[updateIncident] No changes detected, skipping edit history');
+      }
+    }
+    
     return row;
   }
 
@@ -257,6 +298,21 @@ export class DatabaseStorage implements IStorage {
       console.error("Error deleting incident:", error);
       return false;
     }
+  }
+
+  async getIncidentEditHistory(incidentId: number, userId: string): Promise<any[]> {
+    // First verify the user has access to this incident
+    const incident = await this.getIncident(incidentId, userId);
+    if (!incident) return [];
+
+    // Fetch edit history ordered by most recent first
+    const history = await db
+      .select()
+      .from(incidentEditHistory)
+      .where(eq(incidentEditHistory.incidentId, incidentId))
+      .orderBy(desc(incidentEditHistory.editedAt));
+    
+    return history;
   }
 }
 
