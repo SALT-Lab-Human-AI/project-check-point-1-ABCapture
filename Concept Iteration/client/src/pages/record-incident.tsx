@@ -346,6 +346,7 @@ export default function RecordIncident() {
       <div className="grid gap-6 lg:grid-cols-2 items-start">
         {/* Left: Chatbot */}
         <ChatbotRecordingInterface
+          studentId={params.studentId!}
           studentName={student.name}
           onFormGenerated={handleFormGenerated}
           formData={formData}

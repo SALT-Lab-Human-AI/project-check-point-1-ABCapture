@@ -193,6 +193,7 @@ export default function History() {
       const student = students.find(s => s.id === incident.studentId);
       return {
         id: String(incident.id),
+        studentId: incident.studentId,
         studentName: student?.name || "Unknown Student",
         date: new Date(incident.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         time: incident.time,

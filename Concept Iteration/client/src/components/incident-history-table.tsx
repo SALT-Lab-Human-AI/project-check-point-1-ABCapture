@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Edit, Trash2, MoreVertical } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePrivacy } from "@/contexts/privacy-context";
+import { getStudentAvatar } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ import {
 
 interface Incident {
   id: string;
+  studentId?: string | number;
   studentName: string;
   studentPhotoUrl?: string;
   date: string;
@@ -62,13 +64,14 @@ export function IncidentHistoryTable({
           {incidents.map((incident) => {
             const displayName = blurText(incident.studentName);
             const initials = blurInitials(incident.studentName);
+            const avatarIcon = incident.studentId ? getStudentAvatar(incident.studentId) : undefined;
 
             return (
               <TableRow key={incident.id} data-testid={`row-incident-${incident.id}`}>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={incident.studentPhotoUrl} alt={incident.studentName} />
+                      <AvatarImage src={incident.studentPhotoUrl || avatarIcon} alt={incident.studentName} />
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                         {initials}
                       </AvatarFallback>

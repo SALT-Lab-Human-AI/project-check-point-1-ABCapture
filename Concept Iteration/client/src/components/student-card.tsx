@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { usePrivacy } from "@/contexts/privacy-context";
 import { Link } from "wouter";
+import { getStudentAvatar } from "@/lib/utils";
 
 interface StudentCardProps {
   id: string;
@@ -28,6 +29,7 @@ export function StudentCard({
   const { blurText, blurInitials } = usePrivacy();
   const initials = blurInitials(name);
   const displayName = blurText(name);
+  const avatarIcon = getStudentAvatar(id);
 
   // Yellow if incident in last week, green otherwise
   const badgeColor = hasRecentIncident ? "bg-yellow-500 hover:bg-yellow-600" : "bg-chart-2 hover:bg-chart-2/90";
@@ -38,7 +40,7 @@ export function StudentCard({
         <CardContent className="pt-6">
           <div className="flex items-start gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={photoUrl} alt={name} />
+              <AvatarImage src={photoUrl || avatarIcon} alt={name} />
               <AvatarFallback className="bg-primary text-primary-foreground text-lg">
                 {initials}
               </AvatarFallback>

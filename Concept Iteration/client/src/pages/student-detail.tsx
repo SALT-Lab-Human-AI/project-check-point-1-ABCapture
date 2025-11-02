@@ -45,6 +45,7 @@ import {
 } from "recharts";
 import { usePrivacy } from "@/contexts/privacy-context";
 import { useToast } from "@/hooks/use-toast";
+import { getStudentAvatar } from "@/lib/utils";
 
 type ApiStudent = { id: number; name: string; grade: string | null; userId: string; createdAt: string; photoUrl?: string };
 type ApiIncident = {
@@ -262,6 +263,7 @@ export default function StudentDetail() {
 
   const initials = blurInitials(student.name);
   const displayName = blurText(student.name);
+  const avatarIcon = getStudentAvatar(studentId!);
   
   // Yellow if incident in last week, green otherwise
   const badgeColor = hasRecentIncident ? "bg-yellow-500 hover:bg-yellow-600" : "bg-chart-2 hover:bg-chart-2/90";
@@ -297,7 +299,7 @@ export default function StudentDetail() {
         <CardContent className="pt-6">
           <div className="flex items-start gap-6 flex-wrap">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={student.photoUrl} alt={student.name} />
+              <AvatarImage src={student.photoUrl || avatarIcon} alt={student.name} />
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
                 {initials}
               </AvatarFallback>

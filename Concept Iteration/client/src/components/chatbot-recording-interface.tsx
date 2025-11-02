@@ -36,6 +36,7 @@ type ABCFormData = {
 };
 
 interface ChatbotRecordingInterfaceProps {
+  studentId: string | number;
   studentName: string;
   onFormGenerated: (formData: ABCFormData) => void;
   formData: ABCFormData | null;
@@ -43,6 +44,7 @@ interface ChatbotRecordingInterfaceProps {
 }
 
 export function ChatbotRecordingInterface({
+  studentId,
   studentName,
   onFormGenerated,
   formData,

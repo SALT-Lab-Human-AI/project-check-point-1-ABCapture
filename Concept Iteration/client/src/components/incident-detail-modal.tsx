@@ -21,6 +21,7 @@ import {
 import aBlockIcon from "../../../attached_assets/A Block.png";
 import bBlockIcon from "../../../attached_assets/B Block.png";
 import cBlockIcon from "../../../attached_assets/C Block.png";
+import { getStudentAvatar } from "@/lib/utils";
 
 interface IncidentDetailModalProps {
   incident: {
@@ -114,6 +115,7 @@ Status: ${incident.status}
   const initials = incident.studentName
     ? incident.studentName.split(' ').map(n => n[0]).join('').toUpperCase()
     : '?';
+  const avatarIcon = getStudentAvatar(incident.studentId);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -138,7 +140,7 @@ Status: ${incident.status}
           {/* Student Info */}
           <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
             <Avatar className="h-16 w-16">
-              <AvatarImage src="" alt={incident.studentName} />
+              <AvatarImage src={avatarIcon} alt={incident.studentName} />
               <AvatarFallback className="text-lg">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1">

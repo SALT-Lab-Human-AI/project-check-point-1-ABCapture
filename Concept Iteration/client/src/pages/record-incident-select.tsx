@@ -10,8 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Mic, ArrowRight, Users } from "lucide-react";
+import { getStudentAvatar } from "@/lib/utils";
 
 type ApiStudent = { 
   id: number; 
@@ -73,47 +74,57 @@ export default function RecordIncidentSelect() {
                     No students found. Add students first.
                   </div>
                 ) : (
-                  students.map((student) => (
-                    <SelectItem key={student.id} value={String(student.id)}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="text-xs">
-                            {student.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>{student.name}</span>
-                        {student.grade && (
-                          <span className="text-muted-foreground text-xs">
-                            (Grade {student.grade})
-                          </span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))
+                  students.map((student) => {
+                    const avatarIcon = getStudentAvatar(student.id);
+                    const initials = student.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                    return (
+                      <SelectItem key={student.id} value={String(student.id)}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={student.photoUrl || avatarIcon} alt={student.name} />
+                            <AvatarFallback className="text-xs">
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{student.name}</span>
+                          {student.grade && (
+                            <span className="text-muted-foreground text-xs">
+                              (Grade {student.grade})
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    );
+                  })
                 )}
               </SelectContent>
             </Select>
           </div>
 
-          {selectedStudent && (
-            <Card className="bg-muted/50 border-primary/20">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarFallback className="text-lg">
-                      {selectedStudent.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold text-lg">{selectedStudent.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedStudent.grade ? `Grade ${selectedStudent.grade}` : 'Grade not specified'}
-                    </p>
+          {selectedStudent && (() => {
+            const avatarIcon = getStudentAvatar(selectedStudent.id);
+            const initials = selectedStudent.name.split(' ').map(n => n[0]).join('').toUpperCase();
+            return (
+              <Card className="bg-muted/50 border-primary/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={selectedStudent.photoUrl || avatarIcon} alt={selectedStudent.name} />
+                      <AvatarFallback className="text-lg">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-semibold text-lg">{selectedStudent.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedStudent.grade ? `Grade ${selectedStudent.grade}` : 'Grade not specified'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           <div className="flex gap-3">
             <Button

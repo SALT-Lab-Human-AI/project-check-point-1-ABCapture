@@ -5,8 +5,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mic, MicOff, Keyboard, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { getStudentAvatar } from "@/lib/utils";
 
 interface RecordingInterfaceProps {
+  studentId: string | number;
   studentName: string;
   studentPhotoUrl?: string;
   onSubmit: (transcript: string) => void;
@@ -14,6 +16,7 @@ interface RecordingInterfaceProps {
 }
 
 export function RecordingInterface({
+  studentId,
   studentName,
   studentPhotoUrl,
   onSubmit,
@@ -69,13 +72,14 @@ export function RecordingInterface({
     .join("")
     .toUpperCase()
     .slice(0, 2);
+  const avatarIcon = getStudentAvatar(studentId);
 
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12">
-            <AvatarImage src={studentPhotoUrl} alt={studentName} />
+            <AvatarImage src={studentPhotoUrl || avatarIcon} alt={studentName} />
             <AvatarFallback className="bg-primary text-primary-foreground">
               {initials}
             </AvatarFallback>
