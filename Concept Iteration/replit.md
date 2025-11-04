@@ -17,6 +17,28 @@ ABCapture is a specialized educational tool designed for special education teach
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (November 4, 2025)
+
+### Replit Environment Setup
+- **Database**: PostgreSQL database provisioned and fully configured with all required tables
+  - Tables created: users, students, conversations, messages, incidents, edit_history, parents, parent_students, sessions
+  - All foreign key relationships established
+  - Indexes created for optimal performance
+- **Dependencies**: All npm packages installed successfully using `--legacy-peer-deps` flag for compatibility
+- **API Integration**: Groq API key configured for AI-powered chatbot functionality
+- **Development Server**: Configured to run on port 5000 with proper Replit proxy support
+- **Deployment**: Autoscale deployment configuration set up for production
+
+### Configuration Files Updated
+- **vite.config.ts**: Updated to bind to 0.0.0.0:5000 with HMR support for Replit environment
+- **.gitignore**: Created standard Node.js gitignore file
+- **Deployment**: Build and start scripts configured for production deployment
+
+### Environment Variables Required
+- `DATABASE_URL`: PostgreSQL connection string (auto-configured by Replit)
+- `GROQ_API_KEY`: API key for Groq AI services (speech-to-text, chatbot)
+- `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`: Database credentials (auto-configured)
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -92,11 +114,12 @@ Preferred communication style: Simple, everyday language.
 ### External Dependencies
 
 **AI Integration:**
-- **Google Gemini API** (`@google/genai`) - Primary AI service for:
-  - Speech-to-text transcription processing
-  - Natural language understanding of incident descriptions
+- **Groq API** (`groq-sdk`) - Primary AI service for:
+  - Speech-to-text transcription using Whisper Large V3
+  - Natural language understanding of incident descriptions using Llama 3.3 70B
   - Automated ABC form generation from conversational data
   - Behavioral function analysis
+  - Free tier: 30 requests/minute, 14,400 requests/day
 
 **Database Services:**
 - **Neon PostgreSQL** - Serverless PostgreSQL database
