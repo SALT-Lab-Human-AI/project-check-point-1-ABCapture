@@ -106,7 +106,7 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6" style={{ maxHeight: 'calc(100vh - 400px)', minHeight: '600px', overflowY: 'auto' }}>
+        <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="date" className="flex items-center gap-2">

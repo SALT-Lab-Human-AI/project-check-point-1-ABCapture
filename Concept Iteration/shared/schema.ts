@@ -32,6 +32,10 @@ export const users = pgTable("users", {
   // Password reset fields
   resetToken: varchar("reset_token"),
   resetTokenExpiry: timestamp("reset_token_expiry"),
+  // Email verification fields
+  emailVerified: varchar("email_verified").default('false'),
+  verificationToken: varchar("verification_token"),
+  verificationTokenExpiry: timestamp("verification_token_expiry"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
