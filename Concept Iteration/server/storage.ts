@@ -1,6 +1,6 @@
 import { users, students, incidents, incidentEditHistory, type User, type InsertUser, type UpdateUser, type Student, type InsertStudent, type Incident, type InsertIncident, type InsertIncidentEditHistory } from "@shared/schema";
 import { db } from "./db";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, sql, count } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface IStorage {
@@ -26,6 +26,15 @@ export interface IStorage {
   updateIncident(id: number, userId: string, data: Partial<InsertIncident>, editedByName?: string): Promise<Incident | undefined>;
   deleteIncident(id: number, userId: string): Promise<boolean>;
   getIncidentEditHistory(incidentId: number, userId: string): Promise<any[]>;
+  // Admin operations
+  listAllTeachers(): Promise<any[]>;
+  getTeacherById(teacherId: string): Promise<User | undefined>;
+  getTeacherStudents(teacherId: string): Promise<any[]>;
+  listAllIncidents(): Promise<any[]>;
+  getStudentForAdmin(studentId: number): Promise<Student | undefined>;
+  getIncidentForAdmin(incidentId: number): Promise<Incident | undefined>;
+  listIncidentsForStudent(studentId: number): Promise<Incident[]>;
+  getIncidentEditHistoryForAdmin(incidentId: number): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -306,6 +315,111 @@ export class DatabaseStorage implements IStorage {
     if (!incident) return [];
 
     // Fetch edit history ordered by most recent first
+    const history = await db
+      .select()
+      .from(incidentEditHistory)
+      .where(eq(incidentEditHistory.incidentId, incidentId))
+      .orderBy(desc(incidentEditHistory.editedAt));
+    
+    return history;
+  }
+
+  // Admin operations
+  async listAllTeachers(): Promise<any[]> {
+    const teachersWithCounts = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        photoUrl: users.photoUrl,
+        createdAt: users.createdAt,
+        studentCount: sql<number>`cast(count(${students.id}) as int)`,
+      })
+      .from(users)
+      .leftJoin(students, eq(users.id, students.userId))
+      .where(eq(users.role, 'teacher'))
+      .groupBy(users.id)
+      .orderBy(users.firstName, users.lastName);
+    
+    return teachersWithCounts;
+  }
+
+  async getTeacherById(teacherId: string): Promise<User | undefined> {
+    const [teacher] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.id, teacherId), eq(users.role, 'teacher')));
+    return teacher;
+  }
+
+  async getTeacherStudents(teacherId: string): Promise<any[]> {
+    const studentsWithIncidentCounts = await db
+      .select({
+        id: students.id,
+        name: students.name,
+        grade: students.grade,
+        incidentCount: sql<number>`cast(count(${incidents.id}) as int)`,
+        lastIncidentDate: sql<string>`max(${incidents.date})`,
+      })
+      .from(students)
+      .leftJoin(incidents, eq(students.id, incidents.studentId))
+      .where(eq(students.userId, teacherId))
+      .groupBy(students.id)
+      .orderBy(students.name);
+    
+    return studentsWithIncidentCounts;
+  }
+
+  async listAllIncidents(): Promise<any[]> {
+    const allIncidents = await db
+      .select({
+        id: incidents.id,
+        date: incidents.date,
+        time: incidents.time,
+        studentId: incidents.studentId,
+        studentName: students.name,
+        userId: incidents.userId,
+        teacherName: sql<string>`concat(${users.firstName}, ' ', ${users.lastName})`,
+        incidentType: incidents.incidentType,
+        status: incidents.status,
+        createdAt: incidents.createdAt,
+      })
+      .from(incidents)
+      .innerJoin(students, eq(incidents.studentId, students.id))
+      .innerJoin(users, eq(incidents.userId, users.id))
+      .orderBy(desc(incidents.createdAt));
+    
+    return allIncidents;
+  }
+
+  async getStudentForAdmin(studentId: number): Promise<Student | undefined> {
+    const [student] = await db
+      .select()
+      .from(students)
+      .where(eq(students.id, studentId));
+    return student;
+  }
+
+  async getIncidentForAdmin(incidentId: number): Promise<Incident | undefined> {
+    const [incident] = await db
+      .select()
+      .from(incidents)
+      .where(eq(incidents.id, incidentId));
+    return incident;
+  }
+
+  async listIncidentsForStudent(studentId: number): Promise<Incident[]> {
+    const rows = await db
+      .select()
+      .from(incidents)
+      .where(eq(incidents.studentId, studentId))
+      .orderBy(desc(incidents.createdAt));
+    return rows;
+  }
+
+  async getIncidentEditHistoryForAdmin(incidentId: number): Promise<any[]> {
+    // Admin can view edit history for any incident without ownership check
     const history = await db
       .select()
       .from(incidentEditHistory)

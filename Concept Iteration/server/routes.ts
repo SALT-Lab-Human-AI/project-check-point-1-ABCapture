@@ -129,7 +129,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/students/:id", isAuthenticated, async (req, res) => {
     const userId = (req.session as any).userId as string;
     const id = Number(req.params.id);
-    const row = await storage.getStudent(id, userId);
+    
+    // Check if user is admin
+    const user = await storage.getUser(userId);
+    let row;
+    
+    if (user?.role === "administrator") {
+      // Admin can view any student
+      row = await storage.getStudentForAdmin(id);
+    } else {
+      // Teachers can only view their own students
+      row = await storage.getStudent(id, userId);
+    }
+    
     if (!row) return res.status(404).json({ message: "Not found" });
     res.json(row);
   });
@@ -232,7 +244,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/incidents", isAuthenticated, async (req, res) => {
     const userId = (req.session as any).userId as string;
     const studentId = req.query.studentId ? Number(req.query.studentId) : undefined;
-    const rows = await storage.listIncidents(userId, studentId);
+    
+    // Check if user is admin
+    const user = await storage.getUser(userId);
+    let rows;
+    
+    if (user?.role === "administrator" && studentId) {
+      // Admin can view incidents for any student
+      rows = await storage.listIncidentsForStudent(studentId);
+    } else {
+      // Teachers can only view their own incidents
+      rows = await storage.listIncidents(userId, studentId);
+    }
+    
     res.json(rows);
   });
 
@@ -250,7 +274,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/incidents/:id", isAuthenticated, async (req, res) => {
     const userId = (req.session as any).userId as string;
     const id = Number(req.params.id);
-    const row = await storage.getIncident(id, userId);
+    
+    // Check if user is admin
+    const user = await storage.getUser(userId);
+    let row;
+    
+    if (user?.role === "administrator") {
+      // Admin can view any incident
+      row = await storage.getIncidentForAdmin(id);
+    } else {
+      // Teachers can only view their own incidents
+      row = await storage.getIncident(id, userId);
+    }
+    
     if (!row) return res.status(404).json({ message: "Not found" });
     res.json(row);
   });
@@ -284,7 +320,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.session as any).userId as string;
       const id = Number(req.params.id);
-      const history = await storage.getIncidentEditHistory(id, userId);
+      
+      // Check if user is admin
+      const user = await storage.getUser(userId);
+      let history;
+      
+      if (user?.role === "administrator") {
+        // Admin can view edit history for any incident
+        history = await storage.getIncidentEditHistoryForAdmin(id);
+      } else {
+        // Teachers can only view edit history for their own incidents
+        history = await storage.getIncidentEditHistory(id, userId);
+      }
+      
       res.json(history);
     } catch (err: any) {
       console.error("[GET Incident History] Error:", err);
@@ -900,6 +948,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("[Transcribe Audio] Error:", error);
       res.status(500).json({ message: error.message || "Failed to transcribe audio" });
+    }
+  });
+
+  // Admin endpoints
+  const isAdmin = async (req: Request, res: Response, next: Function) => {
+    const userId = (req.session as any)?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const user = await storage.getUser(userId);
+    if (!user || user.role !== "administrator") {
+      return res.status(403).json({ message: "Forbidden: Admin access required" });
+    }
+    
+    next();
+  };
+
+  // Get all teachers with student counts
+  app.get("/api/admin/teachers", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const teachers = await storage.listAllTeachers();
+      res.json(teachers);
+    } catch (error: any) {
+      console.error("Error fetching teachers:", error);
+      res.status(500).json({ message: "Failed to fetch teachers" });
+    }
+  });
+
+  // Get teacher by ID
+  app.get("/api/admin/teachers/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const teacherId = req.params.id;
+      const teacher = await storage.getTeacherById(teacherId);
+      
+      if (!teacher) {
+        return res.status(404).json({ message: "Teacher not found" });
+      }
+      
+      res.json(teacher);
+    } catch (error: any) {
+      console.error("Error fetching teacher:", error);
+      res.status(500).json({ message: "Failed to fetch teacher" });
+    }
+  });
+
+  // Get students for a specific teacher
+  app.get("/api/admin/teachers/:id/students", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const teacherId = req.params.id;
+      const students = await storage.getTeacherStudents(teacherId);
+      res.json(students);
+    } catch (error: any) {
+      console.error("Error fetching teacher students:", error);
+      res.status(500).json({ message: "Failed to fetch teacher students" });
+    }
+  });
+
+  // Get all incidents across all teachers
+  app.get("/api/admin/incidents", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const incidents = await storage.listAllIncidents();
+      res.json(incidents);
+    } catch (error: any) {
+      console.error("Error fetching all incidents:", error);
+      res.status(500).json({ message: "Failed to fetch incidents" });
+    }
+  });
+
+  // Get simplified list of teachers for dropdown filters
+  app.get("/api/admin/teachers-list", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const teachers = await storage.listAllTeachers();
+      const simplifiedList = teachers.map(t => ({
+        id: t.id,
+        name: `${t.firstName || ''} ${t.lastName || ''}`.trim() || t.email,
+      }));
+      res.json(simplifiedList);
+    } catch (error: any) {
+      console.error("Error fetching teachers list:", error);
+      res.status(500).json({ message: "Failed to fetch teachers list" });
+    }
+  });
+
+  // Allow admin to view any student's details
+  app.get("/api/admin/students/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const studentId = parseInt(req.params.id);
+      const student = await storage.getStudentForAdmin(studentId);
+      
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      
+      res.json(student);
+    } catch (error: any) {
+      console.error("Error fetching student:", error);
+      res.status(500).json({ message: "Failed to fetch student" });
     }
   });
 

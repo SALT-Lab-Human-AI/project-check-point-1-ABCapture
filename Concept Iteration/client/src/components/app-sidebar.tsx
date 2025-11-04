@@ -1,4 +1,4 @@
-import { Home, Users, Clock, Settings, LogOut, Mic, LayoutDashboard } from "lucide-react";
+import { Home, Users, Clock, Settings, LogOut, Mic, LayoutDashboard, UserCog, FileText } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -45,19 +45,14 @@ const teacherMenuItems = [
 
 const administratorMenuItems = [
   {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: LayoutDashboard,
+    title: "All Teachers",
+    url: "/admin/teachers",
+    icon: UserCog,
   },
   {
-    title: "All Students",
-    url: "/students",
-    icon: Users,
-  },
-  {
-    title: "All Incidents",
-    url: "/history",
-    icon: Clock,
+    title: "Recent Incidents",
+    url: "/admin/incidents",
+    icon: FileText,
   },
   {
     title: "Settings",

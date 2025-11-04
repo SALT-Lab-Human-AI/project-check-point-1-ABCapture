@@ -24,6 +24,9 @@ import RecordIncident from "@/pages/record-incident";
 import RecordIncidentSelect from "@/pages/record-incident-select";
 import Settings from "@/pages/settings";
 import ParentDashboard from "@/pages/parent-dashboard";
+import AllTeachers from "@/pages/all-teachers";
+import TeacherDetail from "@/pages/teacher-detail";
+import AdminRecentIncidents from "@/pages/admin-recent-incidents";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -37,6 +40,24 @@ function Router() {
         <Route path="/verify-email" component={VerifyEmail} />
         <Route path="/login" component={Login} />
         <Route path="/" component={Login} />
+      </Switch>
+    );
+  }
+
+  // Administrator-specific routes
+  if (user?.role === "administrator") {
+    return (
+      <Switch>
+        <Route path="/" component={AllTeachers} />
+        <Route path="/admin/teachers" component={AllTeachers} />
+        <Route path="/admin/teachers/:id" component={TeacherDetail} />
+        <Route path="/admin/incidents" component={AdminRecentIncidents} />
+        <Route path="/students/:studentId" component={StudentDetail} />
+        <Route path="/settings" component={Settings} />
+        {/* Redirect all other routes to admin home */}
+        <Route>
+          <Redirect to="/admin/teachers" />
+        </Route>
       </Switch>
     );
   }
