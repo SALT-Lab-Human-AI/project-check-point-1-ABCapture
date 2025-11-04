@@ -539,10 +539,12 @@ export default function RecordIncident() {
             </Card>
           ) : (
             <Card className="flex items-center justify-center" style={{ height: 'calc(100vh - 280px)', minHeight: '600px', overflow: 'auto' }}>
-              <CardContent className="text-center">
-                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="h-8 w-8 text-muted-foreground" />
-                </div>
+              <CardContent className="text-center flex flex-col items-center">
+                <img 
+                  src="/assets/form preview illustration.png" 
+                  alt="Form Preview" 
+                  className="w-48 h-48 object-contain mb-4"
+                />
                 <h3 className="font-semibold mb-2">Start Chatting to Generate Form</h3>
                 <p className="text-sm text-muted-foreground max-w-sm">
                   Describe the incident in the chat, and I'll automatically fill out the ABC form for you in real-time.

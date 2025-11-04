@@ -54,18 +54,14 @@ export function ChatbotRecordingInterface({
     {
       id: "instructions",
       role: "assistant",
-      content: `I need the following information - you can tell me everything at once, either by typing or speaking:
+      content: `Please tell me as much as you can about the incident — you can type or speak!
 
-• **Date and Time:** (if different from now)
-• **Location:** Where did the incident occur?
-• **ANTECEDENT:** What happened right before the behavior? What was the child doing/participating in?
-• **BEHAVIOR:** Describe exactly what the child did
-• **CONSEQUENCE:** What happened immediately after?
-• **Duration:** How long did the incident last?
-• **Behavior Hypothesis:** In your opinion, what do you hypothesize the function of the behavior to be?
-  • Select One: Get/Obtain or Escape/Avoid
-  • Select One: Tasks/Demands, Activities, Attention,
-    Settings, People, Objects, or Sensory Stimuli`,
+📅 Date & Time
+📍 Location
+🔁 Antecedent (What happened before the incident?)
+🎯 Behavior (What did the student do?)
+✅ Consequence (What happened after the incident?)
+🧠 Behavior Hypothesis (Why do you think it happened?)`,
       timestamp: new Date(),
     },
   ]);
@@ -82,13 +78,16 @@ export function ChatbotRecordingInterface({
       let inABCFormat = false;
       
       const processedLines = lines.map(line => {
-        // Check if this is an ABC component line (with or without ** bold markers)
-        const abcMatch = line.match(/^\s*[-•*]?\s*\*{0,2}(Antecedent|Behavior|Consequence)\*{0,2}:\s*(.*)/i);
+        // Remove all asterisks from the line
+        const cleanLine = line.replace(/\*/g, '');
+        
+        // Check if this is an ABC component line
+        const abcMatch = cleanLine.match(/^\s*[-•]?\s*(Antecedent|Behavior|Consequence):\s*(.*)/i);
         if (abcMatch) {
           inABCFormat = true;
           const [_, label, text] = abcMatch;
-          // Clean up any extra spaces and bold markers in the label and text
-          const cleanLabel = label.trim().replace(/:\s*$/, '').replace(/\*/g, '');
+          // Clean up any extra spaces in the label and text
+          const cleanLabel = label.trim().replace(/:\s*$/, '');
           const cleanText = text.trim();
           
           // Determine which icon to use based on the label
@@ -107,18 +106,18 @@ export function ChatbotRecordingInterface({
         }
         
         // For non-ABC lines or continuation lines
-        if (inABCFormat && line.trim() === '') {
+        if (inABCFormat && cleanLine.trim() === '') {
           return ''; // Remove extra blank lines within ABC format
         }
         
         // Reset ABC format state if we hit the confirmation message
-        if (line.includes('ABC form has been auto-filled')) {
+        if (cleanLine.includes('ABC form has been auto-filled')) {
           inABCFormat = false;
-          return line.trim();
+          return cleanLine.trim();
         }
         
-        // Preserve other lines as-is
-        return line;
+        // Preserve other lines as-is but without asterisks
+        return cleanLine;
       });
       
       // Process lines to ensure single spacing between bullet points
@@ -134,19 +133,18 @@ export function ChatbotRecordingInterface({
         // Only add a line break if the next line is not a bullet point
         // and we're not at the last line
         if (i < filteredLines.length - 1 && 
-            !next.match(/^\s*[-•*]?\s*\*{0,2}(Antecedent|Behavior|Consequence)\*{0,2}:/i)) {
+            !next.match(/^\s*[-•]?\s*(Antecedent|Behavior|Consequence):/i)) {
           result.push('');
         }
       }
       
-      return result.join('\n')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n/g, '<br />');
+      return result.join('\n').replace(/\n/g, '<br />');
     }
     
-    // For non-ABC messages, just do basic formatting
+    // For non-ABC messages, just remove asterisks and do basic formatting
     return content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*\*(.*?)\*\*/g, '$1')  // Remove ** but keep the text between them
+      .replace(/\*/g, '')  // Remove any remaining asterisks
       .replace(/\n/g, '<br />');
   };
 
