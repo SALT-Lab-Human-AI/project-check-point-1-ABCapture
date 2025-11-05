@@ -153,29 +153,50 @@ npm run db:reset-password
 
 ```
 app/
-├── app/                      # Application source code
-│   ├── client/              # React frontend
-│   │   ├── src/
-│   │   │   ├── components/  # UI components
-│   │   │   ├── pages/       # Route pages
-│   │   │   ├── hooks/       # React hooks
-│   │   │   └── lib/         # Utilities
-│   │   └── index.html
-│   ├── server/              # Express backend
-│   │   ├── routes.ts        # API routes
-│   │   ├── storage.ts       # Database queries
-│   │   ├── groq.ts          # AI integration
-│   │   ├── email.ts         # Email service
-│   │   └── index.ts         # Server entry
-│   ├── shared/              # Shared types/schema
-│   │   └── schema.ts        # Drizzle schema
-│   └── migrations/          # Database migrations
+├── client/                  # React frontend
+│   ├── src/
+│   │   ├── components/      # UI components
+│   │   ├── pages/           # Route pages
+│   │   ├── hooks/           # React hooks (useAuth, useVoiceRecording, etc.)
+│   │   ├── contexts/        # React contexts (PrivacyContext, etc.)
+│   │   └── lib/             # Utilities (queryClient, authUtils)
+│   └── index.html
+├── server/                  # Express backend
+│   ├── routes.ts            # API routes (auth, students, incidents)
+│   ├── storage.ts           # Database queries (Drizzle ORM)
+│   ├── groq.ts              # AI integration (voice-to-text, chatbot)
+│   ├── email.ts             # Email service (Gmail SMTP)
+│   ├── passport.ts          # Authentication (Local + Google OAuth)
+│   ├── vite.ts              # Vite dev server integration
+│   ├── db.ts                # Database connection (Neon)
+│   ├── index.ts             # Server entry point
+│   └── utils/               # Utilities (PII redaction, etc.)
+├── shared/                  # Shared types/schema
+│   └── schema.ts            # Drizzle schema (users, students, incidents)
+├── migrations/              # Database migrations
+│   ├── 001_initial_schema.sql
+│   └── 002_add_edit_history.sql
 ├── docs/                    # Documentation
-├── prompts/                 # AI prompts & config
-├── .env.example             # Environment template
+│   ├── architecture.md      # System architecture & design
+│   ├── use-cases.md         # User workflows & testing
+│   ├── DESIGN_SPEC.md       # Design specifications
+│   ├── SETUP_GUIDE.md       # Setup instructions
+│   └── TESTING.md           # Testing procedures
+├── prompts/                 # AI prompts & configuration
+│   ├── CHATBOT_AUTO_FILL_IMPLEMENTATION.md
+│   ├── VOICE_INPUT_IMPLEMENTATION.md
+│   └── VOICE_TESTING_GUIDE.md
+├── attached_assets/         # Static assets (logo, images)
+├── initial_prototype/       # Initial prototype files
+├── .env.example             # Environment template (no secrets)
 ├── INSTALL.md              # This file
-├── package.json            # Dependencies
-└── vite.config.ts          # Build config
+├── README.md               # Project overview
+├── package.json            # Dependencies & scripts
+├── vite.config.ts          # Vite build configuration
+├── tsconfig.json           # TypeScript configuration
+├── drizzle.config.ts       # Drizzle ORM configuration
+├── tailwind.config.ts      # Tailwind CSS configuration
+└── components.json         # Shadcn/ui components config
 ```
 
 ## Troubleshooting
@@ -222,7 +243,7 @@ The dev server supports HMR for instant updates during development.
 
 ### Database Schema Changes
 
-1. Edit `app/shared/schema.ts`
+1. Edit `shared/schema.ts`
 2. Run `npm run db:push`
 3. Schema changes sync automatically
 
