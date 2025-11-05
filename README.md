@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/main/Concept%20Iteration/attached_assets/ABCapture%20logo.png" width="350" alt="ABCapture logo">
+<img src="https://github.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/blob/main/concept-iteration/attached_assets/ABCapture%20logo.png?raw=true" width="350" alt="ABCapture logo">
 
 
 # ABCapture: An AI-Powered Tool to Support Adults Working With Children With Autism
