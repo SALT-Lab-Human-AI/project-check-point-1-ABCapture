@@ -145,7 +145,7 @@ ABC data is a systematic observation method used in Applied Behavior Analysis (A
 
 ---
 
-**Tools Used**
+**AI Disclosure**
 
 Cursor. (2024). Cursor: The AI code editor. https://www.cursor.com
 
