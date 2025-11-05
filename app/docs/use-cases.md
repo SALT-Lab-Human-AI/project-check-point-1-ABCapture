@@ -393,4 +393,4 @@ For each use case, the following must be true:
 ## Conclusion
 
 These use cases and testing scenarios ensure ABCapture meets the real-world needs of special education teachers while maintaining high quality, security, and usability standards.
->>>>>>> b41824e (Created a checkpoint)
+

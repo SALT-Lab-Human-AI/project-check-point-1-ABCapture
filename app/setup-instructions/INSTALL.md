@@ -170,6 +170,9 @@ app/
 │   ├── vite.ts              # Vite dev server integration
 │   ├── db.ts                # Database connection (Neon)
 │   ├── index.ts             # Server entry point
+│   ├── fixtures/            # Mock/seed data for development
+│   │   ├── mock-parent-data.csv   # Sample parent data
+│   │   └── mock-student-data.csv  # Sample student data
 │   └── utils/               # Utilities (PII redaction, etc.)
 ├── shared/                  # Shared types/schema
 │   └── schema.ts            # Drizzle schema (users, students, incidents)
