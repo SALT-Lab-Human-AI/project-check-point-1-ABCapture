@@ -8,7 +8,7 @@ Check out our latest prototype: [https://abcapture.replit.app](https://abcapture
 
 ## Quick Start
 
-For detailed installation instructions, see [`Setup instructions/INSTALL.md`](Setup%20instructions/INSTALL.md)
+For detailed installation instructions, see [`setup-instructions/INSTALL.md`](setup-instructions/INSTALL.md)
 
 ### Basic Setup
 
@@ -17,7 +17,7 @@ For detailed installation instructions, see [`Setup instructions/INSTALL.md`](Se
 npm install --legacy-peer-deps
 
 # Copy environment template
-cp "Setup instructions/.env.example" .env
+cp "setup-instructions/.env.example" .env
 
 # Configure your environment variables (DATABASE_URL, GROQ_API_KEY, etc.)
 
@@ -56,12 +56,12 @@ app/
 ├── migrations/       # Database migrations
 ├── docs/             # Documentation
 ├── prompts/          # AI configuration
-└── Setup instructions/ # Installation guides & scripts
+└── setup-instructions/ # Installation guides & scripts
 ```
 
 ## Documentation
 
-- **[Installation Guide](Setup%20instructions/INSTALL.md)** - Complete setup instructions
+- **[Installation Guide](setup-instructions/INSTALL.md)** - Complete setup instructions
 - **[Architecture](docs/architecture.md)** - System design and components
 - **[Use Cases](docs/use-cases.md)** - User workflows and testing
 - **[Replit Setup](replit.md)** - Replit-specific configuration

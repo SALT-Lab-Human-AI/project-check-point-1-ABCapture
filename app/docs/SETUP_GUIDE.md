@@ -84,7 +84,7 @@ npm install groq-sdk
 ### Database connection issues
 - Verify `DATABASE_URL` is correct
 - Test connection: `psql $DATABASE_URL`
-- Ensure sessions table exists (see database-setup.sql)
+- Ensure sessions table exists (see setup-instructions/database-setup.sql)
 
 ## What Was Fixed
 

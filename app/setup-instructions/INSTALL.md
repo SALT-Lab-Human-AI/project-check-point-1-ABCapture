@@ -20,10 +20,10 @@ npm install --legacy-peer-deps
 
 ### 2. Configure Environment Variables
 
-Copy the example environment file from Setup instructions folder:
+Copy the example environment file from setup-instructions folder:
 
 ```bash
-cp "Setup instructions/.env.example" .env
+cp "setup-instructions/.env.example" .env
 ```
 
 Edit `.env` and configure the following:
@@ -188,9 +188,10 @@ app/
 │   └── VOICE_TESTING_GUIDE.md
 ├── attached_assets/         # Static assets (logo, images)
 ├── initial_prototype/       # Initial prototype files
-├── Setup instructions/      # Setup files & documentation
+├── setup-instructions/      # Setup files & documentation
 │   ├── INSTALL.md          # This file - installation guide
 │   ├── .env.example        # Environment template (no secrets)
+│   ├── database-setup.sql  # Database initialization SQL
 │   ├── install-chatbot.sh  # Chatbot setup script
 │   ├── check-oauth-setup.sh # OAuth verification script
 │   └── migrate-schema.js   # Database migration utility
