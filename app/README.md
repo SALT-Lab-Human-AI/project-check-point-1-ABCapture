@@ -54,9 +54,9 @@ app/
 ├── server/           # Express backend  
 ├── shared/           # Shared types (Drizzle schema)
 ├── migrations/       # Database migrations
-├── docs/             # Documentation
-├── prompts/          # AI configuration
-└── setup-instructions/ # Installation guides & scripts
+├── docs/                      # Documentation
+├── system-prompts-and-config/ # AI system prompts & configuration
+└── setup-instructions/        # Installation guides & scripts
 ```
 
 ## Documentation

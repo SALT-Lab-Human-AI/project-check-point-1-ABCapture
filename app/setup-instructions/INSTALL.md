@@ -182,7 +182,11 @@ app/
 │   ├── DESIGN_SPEC.md       # Design specifications
 │   ├── SETUP_GUIDE.md       # Setup instructions
 │   └── TESTING.md           # Testing procedures
-├── prompts/                 # AI prompts & configuration
+├── system-prompts-and-config/  # AI system prompts & configuration
+│   ├── chat-assistant-prompt.md       # Main chatbot system prompt
+│   ├── abc-extraction-prompt.md       # ABC data extraction prompt
+│   ├── model-settings.md              # AI model configuration
+│   ├── data-connectors.md             # External service integrations
 │   ├── CHATBOT_AUTO_FILL_IMPLEMENTATION.md
 │   ├── VOICE_INPUT_IMPLEMENTATION.md
 │   └── VOICE_TESTING_GUIDE.md
@@ -258,7 +262,7 @@ The dev server supports HMR for instant updates during development.
 - **Use Cases:** `docs/use-cases.md`
 - **Privacy & Security:** `docs/safety-privacy.md`
 - **Logging & Debugging:** `docs/telemetry-observability.md`
-- **AI Prompts:** `prompts/`
+- **AI Configuration:** `system-prompts-and-config/`
 
 ## Next Steps
 

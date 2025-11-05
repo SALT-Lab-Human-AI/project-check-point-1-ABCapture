@@ -17,7 +17,23 @@ ABCapture is a specialized educational tool designed for special education teach
 
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes (November 4, 2025)
+## Recent Changes (November 5, 2025)
+
+### Project Reorganization
+- **Directory Structure**: Reorganized project for clean GitHub repository format
+  - Renamed main directory from `concept-iteration` to `app` (flattened nested structure)
+  - Created `/docs/` for documentation (architecture.md, use-cases.md, etc.)
+  - Created `/setup-instructions/` for setup files (INSTALL.md, .env.example, database-setup.sql, etc.)
+  - Created `/system-prompts-and-config/` for AI configuration (system prompts, model settings, data connectors)
+  - Removed old `/prompts/` folder, replaced with organized `/system-prompts-and-config/`
+- **AI Configuration**: Extracted system prompts from code into dedicated markdown files:
+  - `chat-assistant-prompt.md` - Main chatbot system prompt
+  - `abc-extraction-prompt.md` - ABC data extraction prompt
+  - `model-settings.md` - AI model configuration details
+  - `data-connectors.md` - External service integrations documentation
+- **Documentation Updates**: Updated all references to reflect new folder structure
+
+## Previous Changes (November 4, 2025)
 
 ### Replit Environment Setup
 - **Database**: **Neon PostgreSQL** (external, NOT Replit's database)
