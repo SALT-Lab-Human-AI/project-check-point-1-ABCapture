@@ -20,12 +20,14 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes (November 4, 2025)
 
 ### Replit Environment Setup
-- **Database**: PostgreSQL database provisioned and fully configured with all required tables
-  - Tables created: users, students, conversations, messages, incidents, edit_history, parents, parent_students, sessions
-  - All foreign key relationships established
-  - Indexes created for optimal performance
+- **Database**: **Neon PostgreSQL** (external, NOT Replit's database)
+  - Production database: `ep-red-dust-ahdm5ufw-pooler.c-3.us-east-1.aws.neon.tech/neondb`
+  - Tables: users, students, conversations, messages, incidents, edit_history, parents, parent_students, sessions
+  - 14 users, 20 students, 25 incidents (production data)
+  - **IMPORTANT**: Replit may auto-provision a PostgreSQL database - DO NOT USE IT. Always use the Neon DATABASE_URL.
 - **Dependencies**: All npm packages installed successfully using `--legacy-peer-deps` flag for compatibility
 - **API Integration**: Groq API key configured for AI-powered chatbot functionality
+- **Email Service**: Gmail SMTP configured for incident reports to guardians
 - **Development Server**: Configured to run on port 5000 with proper Replit proxy support
 - **Deployment**: Autoscale deployment configuration set up for production
 
@@ -33,11 +35,16 @@ Preferred communication style: Simple, everyday language.
 - **vite.config.ts**: Updated to bind to 0.0.0.0:5000 with HMR support for Replit environment
 - **.gitignore**: Created standard Node.js gitignore file
 - **Deployment**: Build and start scripts configured for production deployment
+- **package.json**: Root delegation pattern for deployment
 
 ### Environment Variables Required
-- `DATABASE_URL`: PostgreSQL connection string (auto-configured by Replit)
+- `DATABASE_URL`: **Neon PostgreSQL connection string** (user-provided, ep-red-dust-ahdm5ufw-pooler.c-3.us-east-1.aws.neon.tech)
 - `GROQ_API_KEY`: API key for Groq AI services (speech-to-text, chatbot)
-- `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`: Database credentials (auto-configured)
+- `SESSION_SECRET`: Secret key for session management
+- `EMAIL_SERVICE`: Gmail (for sending incident reports)
+- `EMAIL_USER`: Gmail account for sending emails
+- `EMAIL_PASSWORD`: Gmail app-specific password
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`: (Optional) For Google OAuth login
 
 ## System Architecture
 
@@ -122,10 +129,14 @@ Preferred communication style: Simple, everyday language.
   - Free tier: 30 requests/minute, 14,400 requests/day
 
 **Database Services:**
-- **Neon PostgreSQL** - Serverless PostgreSQL database
+- **Neon PostgreSQL** - Serverless PostgreSQL database (PRIMARY DATABASE)
+  - Host: `ep-red-dust-ahdm5ufw-pooler.c-3.us-east-1.aws.neon.tech`
+  - Database: `neondb`
   - Accessed via `@neondatabase/serverless` driver
   - WebSocket connections for serverless compatibility
-  - Environment variable: `DATABASE_URL`
+  - Environment variable: `DATABASE_URL` (user's existing Neon database)
+  - **Contains production data**: 14 users, 20 students, 25 incidents
+  - **CRITICAL**: Do NOT use Replit's auto-provisioned PostgreSQL - always use this Neon database
 
 **UI Component Libraries:**
 - **Radix UI** - Headless accessible component primitives for:
