@@ -6,7 +6,7 @@
 graph TB
     subgraph Client["CLIENT LAYER - React + TypeScript"]
         UI[User Interface]
-        Pages[Pages: Login, Teacher, Admin, Parent]
+        Pages[Pages: Login, Teacher, Admin]
         Components[Components: Forms, Charts, Voice Input]
         State[State Management: TanStack Query]
     end
@@ -242,11 +242,6 @@ graph LR
         T5[Chat with AI]
     end
     
-    subgraph Parent
-        P1[View My Children]
-        P2[View Their Incidents]
-        P3[Receive Email Alerts]
-    end
 ```
 
 ## Deployment Architecture
