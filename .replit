@@ -26,16 +26,12 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd concept-iteration && npm run dev"
+args = "cd app && npm run dev"
 waitForPort = 5000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 33599
-externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"

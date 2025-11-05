@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd concept-iteration && npm install --legacy-peer-deps && npm run build",
-    "start": "cd concept-iteration && npm run start",
-    "dev": "cd concept-iteration && npm run dev"
+    "build": "cd app && npm install --legacy-peer-deps && npm run build",
+    "start": "cd app && npm run start",
+    "dev": "cd app && npm run dev"
   }
 }
