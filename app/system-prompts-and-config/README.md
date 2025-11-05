@@ -62,28 +62,6 @@ Complete technical documentation of the chatbot auto-fill feature:
 
 ---
 
-## 🎯 Design Philosophy
-
-### Speed Over Perfection
-Teachers work in time-sensitive situations. Our AI is optimized for:
-- Fast information extraction from natural language
-- Minimal clarifying questions (1-2 max)
-- Accepting incomplete data (teachers can edit later)
-
-### Teacher Control
-Teachers maintain full agency over their data:
-- Edit any auto-filled field
-- Clear and restart forms anytime
-- Final decision on saving incidents
-
-### Privacy & Security
-- Student names redacted before sending to AI
-- All API communications encrypted in transit
-- Credentials stored securely in environment variables
-- No PII stored in AI conversation logs
-
----
-
 ## 📊 Performance Metrics
 
 **Current Configuration Performance:**
