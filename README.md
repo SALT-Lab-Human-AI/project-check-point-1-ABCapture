@@ -141,4 +141,18 @@ ABC data is a systematic observation method used in Applied Behavior Analysis (A
 - **Jiya**: Will lead the **user study design** and data analysis, including both quantitative (task success, satisfaction) and qualitative insights. Will draft the **Results** and **Discussion** sections.  
 - **Sara**: Will edit and compile the **Final Report** (3,500–4,500 words), write the **Related Work** and **Future Work** sections, and manage final formatting and submission.  
 - **Manuela**: Will synthesize qualitative feedback, design **charts and visuals** for the report, and help prepare the **final presentation**.  
-- **Rithika**: Will consolidate all **final deliverables** (code, cleaned data, scripts, and prompt files), document **Methodology** and **Risks & Limitations**, and ensure reproducibility.  
+- **Rithika**: Will consolidate all **final deliverables** (code, cleaned data, scripts, and prompt files), document **Methodology** and **Risks & Limitations**, and ensure reproducibility.
+
+---
+
+**Tools Used**
+
+Cursor. (2024). Cursor: The AI code editor. https://www.cursor.com
+
+Windsurf. (2024). Windsurf: The AI-native IDE. https://www.windsurf.com
+
+Replit. (2024). Replit: Build software faster with AI. https://replit.com
+
+Anthropic. (2024). Claude: The AI assistant for work and research. https://www.anthropic.com/claude
+
+
