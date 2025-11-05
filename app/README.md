@@ -66,15 +66,3 @@ app/
 - **[Use Cases](docs/use-cases.md)** - User workflows and testing
 - **[Replit Setup](replit.md)** - Replit-specific configuration
 
-## Database
-
-This project uses **Neon PostgreSQL** (external database):
-- Host: `ep-red-dust-ahdm5ufw-pooler.c-3.us-east-1.aws.neon.tech`
-- Database: `neondb`
-- Production data: 14 users, 20 students, 25 incidents
-
-**Note:** Do NOT use Replit's auto-provisioned PostgreSQL database.
-
-## License
-
-MIT
