@@ -20,10 +20,10 @@ npm install --legacy-peer-deps
 
 ### 2. Configure Environment Variables
 
-Copy the example environment file:
+Copy the example environment file from Setup instructions folder:
 
 ```bash
-cp .env.example .env
+cp "Setup instructions/.env.example" .env
 ```
 
 Edit `.env` and configure the following:
@@ -188,8 +188,12 @@ app/
 │   └── VOICE_TESTING_GUIDE.md
 ├── attached_assets/         # Static assets (logo, images)
 ├── initial_prototype/       # Initial prototype files
-├── .env.example             # Environment template (no secrets)
-├── INSTALL.md              # This file
+├── Setup instructions/      # Setup files & documentation
+│   ├── INSTALL.md          # This file - installation guide
+│   ├── .env.example        # Environment template (no secrets)
+│   ├── install-chatbot.sh  # Chatbot setup script
+│   ├── check-oauth-setup.sh # OAuth verification script
+│   └── migrate-schema.js   # Database migration utility
 ├── README.md               # Project overview
 ├── package.json            # Dependencies & scripts
 ├── vite.config.ts          # Vite build configuration
