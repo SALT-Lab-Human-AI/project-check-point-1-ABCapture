@@ -1,8 +1,4 @@
-<img 
-  src="https://raw.githubusercontent.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/main/Concept%20Iteration/attached_assets/ABCapture%20logo.png" 
-  width="350" 
-  alt="ABCapture logo"
-/>
+<img src="https://raw.githubusercontent.com/SALT-Lab-Human-AI/project-check-point-1-ABCapture/main/Concept%20Iteration/attached_assets/ABCapture%20logo.png" width="350" alt="ABCapture logo">
 
 
 # ABCapture: An AI-Powered Tool to Support Adults Working With Children With Autism
@@ -122,11 +118,7 @@ ABC data is a systematic observation method used in Applied Behavior Analysis (A
 ---
 
 **Checkpoint 3: Working Implementation & Live Demo**
-- **All Members**: Collaborated on building a full-stack working prototype with comprehensive features
-- **Jiya**:
-- **Manuela**:
-- **Rithika**:
-- **Sara**:
+- **All Members**: Collaborated on building a full-stack working prototype with comprehensive features. Work was split up evenly using the Project Roadmap Tasks, and then members met live via Zoom for 3 hours to finalize details prior to the Checkpoint 3 Presentation.
 
 **Key Features Implemented:**
 - ✅ AI-powered chatbot for incident recording (Groq Llama 3.3 70B)
@@ -135,12 +127,13 @@ ABC data is a systematic observation method used in Applied Behavior Analysis (A
 - ✅ Student profiles with colorful avatar icons
 - ✅ Comprehensive analytics (14-day trends, function analysis, week-over-week comparison)
 - ✅ Draft and signed incident status with digital signatures
+- ✅ Report edit history tracking
 - ✅ Parent email communication system
 - ✅ Privacy mode for presentations
 - ✅ Role-based access (Teacher/Administrator)
 - ✅ Advanced filtering (status, grade, behavior type)
 - ✅ Export and print functionality
-- ✅ Responsive design for mobile and desktop
+- ✅ Responsive design for desktop
 
 ---
 
