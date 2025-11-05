@@ -62,37 +62,6 @@ Complete technical documentation of the chatbot auto-fill feature:
 
 ---
 
-## 🔧 Usage Guidelines
-
-### Modifying System Prompts
-
-When updating AI prompts:
-
-1. **Test thoroughly** - Prompts directly affect teacher experience
-2. **Update source code** - Edit `app/server/groq.ts` to implement changes
-3. **Document changes** - Update the corresponding `.md` file
-4. **Maintain formatting** - ABC extraction requires specific Markdown structure
-
-### Modifying Model Settings
-
-When changing model parameters:
-
-1. **Consider impact** - Temperature affects consistency vs. creativity
-2. **Update docs** - Keep `model-settings.md` synchronized
-3. **Monitor performance** - Track response quality, speed, and costs
-4. **Check limits** - Stay within Groq API rate limits
-
-### Adding Data Connectors
-
-When integrating new external services:
-
-1. Document in `data-connectors.md`
-2. Add environment variables to `setup-instructions/.env.example`
-3. Update `setup-instructions/INSTALL.md` with setup steps
-4. Test thoroughly before deployment
-
----
-
 ## 🎯 Design Philosophy
 
 ### Speed Over Perfection
