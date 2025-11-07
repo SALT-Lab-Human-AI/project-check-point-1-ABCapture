@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type ApiStudent = { id: number; name: string; grade: string | null };
+type ApiStudent = { id: number; name: string; grade: string; notes?: string };
 type ApiIncident = { id: number; studentId: number; date: string; createdAt: string };
 
 export default function Students() {
@@ -29,14 +29,24 @@ export default function Students() {
   });
 
   const addStudent = useMutation({
-    mutationFn: async (student: { name: string; grade: string; classroom: string; notes: string }) => {
+    mutationFn: async (student: { 
+      name: string; 
+      grade: string; 
+      notes: string;
+      parentFirstName: string;
+      parentLastName: string;
+      parentEmail: string;
+    }) => {
       console.log("Frontend: Adding student:", student);
       
       try {
         const res = await apiRequest("POST", "/api/students", { 
           name: student.name, 
-          grade: student.grade || null,
-          classroom: student.classroom || null
+          grade: student.grade,
+          notes: student.notes,
+          parentFirstName: student.parentFirstName,
+          parentLastName: student.parentLastName,
+          parentEmail: student.parentEmail
         });
         
         if (!res.ok) {
@@ -135,7 +145,14 @@ export default function Students() {
       return lastNameA.localeCompare(lastNameB, undefined, { sensitivity: 'base' });
     });
 
-  const handleAddStudent = (student: { name: string; grade: string; classroom: string; notes: string }) => {
+  const handleAddStudent = (student: { 
+    name: string; 
+    grade: string; 
+    notes: string;
+    parentFirstName: string;
+    parentLastName: string;
+    parentEmail: string;
+  }) => {
     addStudent.mutate(student);
   };
 

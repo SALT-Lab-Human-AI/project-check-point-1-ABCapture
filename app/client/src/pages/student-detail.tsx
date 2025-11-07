@@ -58,7 +58,7 @@ import { getStudentAvatar } from "@/lib/utils";
 import { IncidentDetailModal } from "@/components/incident-detail-modal";
 import { ABCFormEdit } from "@/components/abc-form-edit";
 
-type ApiStudent = { id: number; name: string; grade: string | null; userId: string; createdAt: string; photoUrl?: string };
+type ApiStudent = { id: number; name: string; grade: string; userId: string; createdAt: string; photoUrl?: string; notes?: string };
 type ApiIncident = {
   id: number;
   studentId: number;
@@ -253,7 +253,7 @@ export default function StudentDetail() {
 
   // Fetch student data from API
   const { data: student, isLoading: studentLoading } = useQuery<ApiStudent>({
-    queryKey: ["/api/students", studentId],
+    queryKey: [`/api/students/${studentId}`],
     enabled: !!studentId,
   });
 
@@ -373,6 +373,17 @@ export default function StudentDetail() {
                 </h2>
               </div>
               <p className="text-muted-foreground mb-4">Grade {student.grade || 'N/A'}</p>
+              
+              {/* Notes Section */}
+              {student.notes && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Notes</h3>
+                  <div className="bg-gray-50 p-3 rounded-md text-sm">
+                    {student.notes}
+                  </div>
+                </div>
+              )}
+              
               <div className="flex items-center gap-3 flex-wrap mb-4">
                 <Badge variant="secondary" className={`text-sm text-white border-0 ${badgeColor}`}>
                   {incidentCount} {incidentCount === 1 ? "incident" : "incidents"}

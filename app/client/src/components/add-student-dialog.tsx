@@ -19,6 +19,9 @@ interface AddStudentDialogProps {
     name: string;
     grade: string;
     notes: string;
+    parentFirstName: string;
+    parentLastName: string;
+    parentEmail: string;
   }) => void;
 }
 
@@ -27,14 +30,27 @@ export function AddStudentDialog({ onAddStudent }: AddStudentDialogProps) {
   const [name, setName] = useState("");
   const [grade, setGrade] = useState("");
   const [notes, setNotes] = useState("");
+  const [parentFirstName, setParentFirstName] = useState("");
+  const [parentLastName, setParentLastName] = useState("");
+  const [parentEmail, setParentEmail] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      onAddStudent({ name, grade, notes });
+      onAddStudent({ 
+        name, 
+        grade, 
+        notes, 
+        parentFirstName, 
+        parentLastName, 
+        parentEmail 
+      });
       setName("");
       setGrade("");
       setNotes("");
+      setParentFirstName("");
+      setParentLastName("");
+      setParentEmail("");
       setOpen(false);
     }
   };
@@ -68,13 +84,14 @@ export function AddStudentDialog({ onAddStudent }: AddStudentDialogProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="grade">Grade</Label>
+              <Label htmlFor="grade">Grade *</Label>
               <Input
                 id="grade"
                 value={grade}
                 onChange={(e) => setGrade(e.target.value)}
                 placeholder="e.g., 3"
                 data-testid="input-student-grade"
+                required
               />
             </div>
             <div className="space-y-2">
@@ -86,6 +103,43 @@ export function AddStudentDialog({ onAddStudent }: AddStudentDialogProps) {
                 placeholder="Additional notes about the student (optional)"
                 data-testid="input-student-notes"
               />
+            </div>
+            <div className="space-y-4">
+              <Label className="text-base font-medium">Guardian Information *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="parentFirstName">Guardian First Name *</Label>
+                <Input
+                  id="parentFirstName"
+                  value={parentFirstName}
+                  onChange={(e) => setParentFirstName(e.target.value)}
+                  placeholder="Enter guardian first name"
+                  data-testid="input-parent-first-name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="parentLastName">Guardian Last Name *</Label>
+                <Input
+                  id="parentLastName"
+                  value={parentLastName}
+                  onChange={(e) => setParentLastName(e.target.value)}
+                  placeholder="Enter guardian last name"
+                  data-testid="input-parent-last-name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="parentEmail">Guardian Email *</Label>
+                <Input
+                  id="parentEmail"
+                  type="email"
+                  value={parentEmail}
+                  onChange={(e) => setParentEmail(e.target.value)}
+                  placeholder="Enter guardian email address"
+                  data-testid="input-parent-email"
+                  required
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

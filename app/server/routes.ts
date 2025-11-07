@@ -5,16 +5,16 @@ import { db } from "./db";
 import { sendIncidentEmail, sendPasswordResetEmail, sendVerificationEmail, createTransporter } from "./email";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
-import { parents, parentStudents, users } from "@shared/schema";
+import { users, students, incidents, incidentEditHistory, parents, parentStudents, type User, type InsertUser, type UpdateUser, type Student, type InsertStudent, type Incident, type InsertIncident, type InsertIncidentEditHistory } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
-import multer from "multer";
-import { insertUserSchema, updateUserSchema, loginSchema, insertStudentSchema, updateStudentSchema, insertIncidentSchema, updateIncidentSchema } from "@shared/schema";
+import { insertStudentSchema, updateStudentSchema, insertIncidentSchema, updateIncidentSchema, insertUserSchema, loginSchema } from "@shared/schema";
 import { sendChatMessage, extractABCData, transcribeAudio, type ChatMessage } from "./groq";
 import { redactStudentNames } from "./utils/pii-redaction";
 import passport from "./passport";
+import multer from "multer";
 
 // Session middleware
 function setupSession(app: Express) {
@@ -62,6 +62,8 @@ export const isAuthenticated = (req: Request, res: Response, next: Function) => 
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  console.log("🚀 Registering routes...");
+  
   // Setup session FIRST before any routes
   setupSession(app);
   
@@ -102,15 +104,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Creating student for user:", userId, "with data:", req.body);
       
-      // Validate the request body (should NOT include userId)
-      const data = insertStudentSchema.parse(req.body);
+      const { parentFirstName, parentLastName, parentEmail, ...studentData } = req.body;
+      
+      // Validate that all required parent fields are provided
+      if (!parentFirstName || !parentLastName || !parentEmail) {
+        return res.status(400).json({ 
+          message: "Parent first name, last name, and email are required" 
+        });
+      }
+      
+      // Validate the student data (should NOT include userId)
+      const data = insertStudentSchema.parse(studentData);
       console.log("Validated student data:", data);
+      console.log("Student data includes notes:", data.notes);
       
       // Create student with userId from session
-      const row = await storage.createStudent(userId, data);
-      console.log("Created student successfully:", row);
+      const student = await storage.createStudent(userId, data);
+      console.log("Created student successfully:", student);
+      console.log("Returned student has notes:", student.notes);
       
-      res.status(201).json(row);
+      // Create parent (now required)
+      console.log("Creating parent for student:", student.id);
+      const parent = await storage.createParent({
+        firstName: parentFirstName,
+        lastName: parentLastName,
+        email: parentEmail,
+      });
+      
+      // Link parent to student
+      await storage.linkParentToStudent(parent.id, student.id);
+      console.log("Linked parent to student successfully");
+      
+      res.status(201).json(student);
     } catch (err: any) {
       console.error("Error creating student:", err);
       
@@ -143,6 +168,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     if (!row) return res.status(404).json({ message: "Not found" });
+    console.log("GET /api/students/:id - returning student data:", row);
+    console.log("GET /api/students/:id - student has notes:", row.notes);
     res.json(row);
   });
 
@@ -910,7 +937,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     limits: {
       fileSize: 25 * 1024 * 1024, // 25MB max file size
     },
-    fileFilter: (req, file, cb) => {
+    fileFilter: (req: any, file: any, cb: any) => {
       // Accept audio formats supported by Whisper
       const allowedMimes = ['audio/webm', 'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/mp4'];
       if (allowedMimes.includes(file.mimetype)) {
@@ -921,7 +948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   });
 
-  app.post("/api/chat/transcribe-audio", isAuthenticated, upload.single('audio'), async (req, res) => {
+  app.post("/api/chat/transcribe-audio", isAuthenticated, upload.single('audio'), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No audio file provided" });
@@ -1049,6 +1076,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch student" });
     }
   });
+
+  // Simple test endpoint
+  app.get("/api/test", (req, res) => {
+    console.log("✅ Test endpoint called successfully!");
+    res.json({ message: "Server is working!" });
+  });
+
+  // Temporary migration endpoint to add notes field
+  app.post("/api/run-migration", async (req, res) => {
+    try {
+      console.log("Running migration to add notes field...");
+      
+      // Check if notes column already exists
+      const checkResult = await db.execute(sql`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'students' AND column_name = 'notes'
+      `);
+      
+      if (checkResult.rows.length === 0) {
+        // Add notes column
+        await db.execute(sql`ALTER TABLE students ADD COLUMN notes TEXT`);
+        console.log('✅ Added notes column to students table');
+      } else {
+        console.log('ℹ️  Notes column already exists in students table');
+      }
+      
+      // Check if grade column is nullable
+      const gradeCheckResult = await db.execute(sql`
+        SELECT is_nullable 
+        FROM information_schema.columns 
+        WHERE table_name = 'students' AND column_name = 'grade'
+      `);
+      
+      if (gradeCheckResult.rows[0]?.is_nullable === 'YES') {
+        // Make grade column NOT NULL
+        await db.execute(sql`ALTER TABLE students ALTER COLUMN grade SET NOT NULL`);
+        console.log('✅ Made grade column NOT NULL');
+      } else {
+        console.log('ℹ️  Grade column is already NOT NULL');
+      }
+      
+      res.json({ success: true, message: "Migration completed successfully!" });
+      
+    } catch (error: any) {
+      console.error('❌ Migration failed:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  console.log("✅ All routes registered successfully!");
 
   const httpServer = createServer(app);
   return httpServer;

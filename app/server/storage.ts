@@ -1,4 +1,4 @@
-import { users, students, incidents, incidentEditHistory, type User, type InsertUser, type UpdateUser, type Student, type InsertStudent, type Incident, type InsertIncident, type InsertIncidentEditHistory } from "@shared/schema";
+import { users, students, incidents, incidentEditHistory, parents, parentStudents, type User, type InsertUser, type UpdateUser, type Student, type InsertStudent, type Incident, type InsertIncident, type InsertIncidentEditHistory } from "@shared/schema";
 import { db } from "./db";
 import { and, eq, desc, sql, count } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -19,6 +19,9 @@ export interface IStorage {
   createStudent(userId: string, data: InsertStudent): Promise<Student>;
   updateStudent(id: number, userId: string, data: Partial<InsertStudent>): Promise<Student | undefined>;
   deleteStudent(id: number, userId: string): Promise<boolean>;
+  // Parent operations
+  createParent(parentData: { firstName: string; lastName: string; email: string }): Promise<any>;
+  linkParentToStudent(parentId: number, studentId: number): Promise<void>;
   // Incident operations
   listIncidents(userId: string, studentId?: number, status?: string): Promise<Incident[]>;
   getIncident(id: number, userId: string): Promise<Incident | undefined>;
@@ -218,6 +221,28 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(students.id, id), eq(students.userId, userId)));
     // drizzle returns { rowCount?: number } depending on driver; fallback to truthy
     return !!(deleted as any)?.rowCount || true;
+  }
+
+  // Parent operations
+  async createParent(parentData: { firstName: string; lastName: string; email: string }): Promise<any> {
+    const [parent] = await db
+      .insert(parents)
+      .values({
+        firstName: parentData.firstName,
+        lastName: parentData.lastName,
+        email: parentData.email,
+      })
+      .returning();
+    return parent;
+  }
+
+  async linkParentToStudent(parentId: number, studentId: number): Promise<void> {
+    await db
+      .insert(parentStudents)
+      .values({
+        parentId,
+        studentId,
+      });
   }
 
   // Incidents
@@ -435,7 +460,7 @@ export class DatabaseStorage implements IStorage {
   async listIncidentsForStudent(studentId: number, status?: string): Promise<Incident[]> {
     let where = eq(incidents.studentId, studentId);
     if (status) {
-      where = and(where, eq(incidents.status, status));
+      where = and(where, eq(incidents.status, status))!;
     }
     const rows = await db
       .select({

@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 
-type ApiStudent = { id: number; name: string; grade: string | null; photoUrl?: string };
+type ApiStudent = { id: number; name: string; grade: string; photoUrl?: string; notes?: string };
 type ApiIncident = {
   id: number;
   studentId: number;

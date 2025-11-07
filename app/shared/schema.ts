@@ -69,7 +69,8 @@ export const students = pgTable("students", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
-  grade: text("grade"),
+  grade: text("grade").notNull(),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
