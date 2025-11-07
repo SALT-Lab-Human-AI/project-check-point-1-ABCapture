@@ -51,7 +51,7 @@ export default function RecordIncident() {
     queryKey: ["/api/students"],
   });
 
-  const student = students.find((s) => String(s.id) === params?.studentId);
+  const student = students.find((s) => String(s.id) === (params as { studentId: string })?.studentId);
 
   // Debug: Log when formData changes
   useEffect(() => {
@@ -75,18 +75,21 @@ export default function RecordIncident() {
     },
     onSuccess: (data) => {
       console.log("[RecordIncident] Incident saved successfully:", data);
-      toast({
-        title: "Success!",
-        description: "Incident saved as draft. Please review and sign.",
-      });
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/incidents?studentId=${params?.studentId}`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/students"] });
-      // Redirect to student detail page
-      setTimeout(() => {
-        setLocation(`/students/${params?.studentId}`);
-      }, 500);
+      // Only show success message and redirect if it's a draft (not signed)
+      if (data.status === 'draft') {
+        toast({
+          title: "Success!",
+          description: "Incident saved as draft. Please review and sign.",
+        });
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
+        queryClient.invalidateQueries({ queryKey: [`/api/incidents?studentId=${params?.studentId}`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+        // Redirect to student detail page
+        setTimeout(() => {
+          setLocation(`/students/${params?.studentId}`);
+        }, 500);
+      }
     },
     onError: (error: any) => {
       console.error("[RecordIncident] Error saving incident:", error);
@@ -300,25 +303,47 @@ export default function RecordIncident() {
 
     setIsSaving(true);
     try {
+      const now = new Date();
+      
+      // Create a copy of formData and update only the necessary fields
       const incidentData = {
+        ...formData,
         studentId: student.id,
-        date: new Date().toISOString().split('T')[0],
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
-        summary: formData.summary || "",
-        antecedent: formData.antecedent || "",
-        behavior: formData.behavior || "",
-        consequence: formData.consequence || "",
-        incidentType: formData.incidentType || "Other",
-        functionOfBehavior: formData.functionOfBehavior || [],
-        location: "",
-        status: "signed",
+        status: "signed" as const,
         signature: signatureName,
-        signedAt: new Date().toISOString(),
+        // Convert date to string in YYYY-MM-DD format if it's a Date object
+        date: formData.date && typeof formData.date === 'object' && 'toISOString' in formData.date 
+          ? (formData.date as Date).toISOString().split('T')[0] 
+          : formData.date,
+        // Convert time to string in HH:MM format if it's a Date object
+        time: formData.time && typeof formData.time === 'object' && 'toLocaleTimeString' in formData.time 
+          ? (formData.time as Date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+          : formData.time,
+        // Don't include signedAt - the server will set it automatically when status is "signed"
       };
+      
+      console.log('Submitting incident data:', JSON.stringify(incidentData, null, 2));
 
       console.log("[RecordIncident] Signing and saving incident:", incidentData);
       await saveIncident.mutateAsync(incidentData);
+      
+      // Show success message
+      toast({
+        title: "Incident Signed",
+        description: "The incident has been signed and finalized.",
+      });
+      
+      // Invalidate queries to refresh the incident list
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [`/api/incidents?studentId=${student.id}`] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/incidents"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/students"] })
+      ]);
+      
       setHasUnsavedChanges(false);
+      
+      // Navigate to incident history page immediately after successful submission
+      setLocation("/history");
     } catch (error) {
       console.error("[RecordIncident] Error saving incident:", error);
     } finally {
@@ -346,7 +371,7 @@ export default function RecordIncident() {
       <div className="grid gap-6 lg:grid-cols-2 items-start">
         {/* Left: Chatbot */}
         <ChatbotRecordingInterface
-          studentId={params.studentId!}
+          studentId={(params as { studentId: string }).studentId}
           studentName={student.name}
           onFormGenerated={handleFormGenerated}
           formData={formData}
