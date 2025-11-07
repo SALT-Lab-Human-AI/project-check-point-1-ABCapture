@@ -466,6 +466,42 @@ app.post('/api/incidents', async (req, res) => {
 
 ---
 
+### Database Storage for Observability Events
+
+Storing a trimmed, privacy-safe subset of telemetry in Postgres makes it queryable for audits and longitudinal analytics while still streaming full logs to aggregators.
+
+**Recommended Table:**
+
+```sql
+CREATE TABLE observability_events (
+  id                serial PRIMARY KEY,
+  event_type        text NOT NULL,
+  severity          text CHECK (severity IN ('debug','info','warn','error')),
+  user_id           uuid,
+  resource_type     text,
+  resource_id       text,
+  request_id        uuid,
+  metadata          jsonb DEFAULT '{}'::jsonb,
+  occurred_at       timestamptz DEFAULT now()
+);
+```
+
+**Insertion Helper:**
+
+```typescript
+// server/observability/store.ts
+export async function recordObservabilityEvent(event: ObservabilityEvent) {
+  const sanitized = sanitizeMetadata(event.metadata);
+  await db.insert(observabilityEvents).values({
+    ...event,
+    metadata: sanitized,
+    occurredAt: new Date()
+  });
+}
+```
+
+Use this helper alongside `trackEvent`, `logAuditEvent`, and security alerts for high-value actions (e.g., signed report edits, repeated login failures). Keep metadata lean—store identifiers or hashes instead of full payloads to avoid PII leakage.
+
 ## 6. Security Monitoring
 
 ### Events to Monitor
@@ -758,6 +794,30 @@ app.get('/api/students/:id', async (req, res) => {
 - [ ] Train team on monitoring
 
 ---
+
+## 11. Test Case Debugging & Telemetry
+
+### Goals
+- Reproduce production-grade telemetry locally when tests fail.
+- Validate that logging, metrics, and alerts fire as expected during automated runs.
+
+### Test Logging Conventions
+- Enable verbose logging with `LOG_LEVEL=debug` (or `TRACE_LOGGING=true`) when running `pnpm test` to surface structured logs inside Jest/Vitest output.
+- Inject a dedicated Winston/Pino transport in test setup that writes to `tmp/test-logs/<testRunId>.json` and tags each entry with `{ testRunId, suite, testName }` for quick triage.
+- Generate a UUID `TEST_RUN_ID` at the start of each suite (e.g., via `beforeAll`) and forward it via request headers/context so server logs and client mocks share the same correlation id.
+
+### Capturing Telemetry in Tests
+- For integration/API tests, wrap the Express app with supertest and assert that `recordObservabilityEvent` is invoked using spies/mocks so critical events (incident creation, edit history writes) persist to the database.
+- Use dependency injection or environment toggles (`ENABLE_METRICS=false`) to swap Prometheus collectors with in-memory mocks, allowing assertions against histogram increments without hitting the real registry.
+- When testing Groq fallbacks, seed mock responses that trigger error paths and verify alert helpers (`sendAlert`, security logger) capture expected metadata.
+
+### Debug Workflow
+1. Re-run the failing test with `LOG_LEVEL=debug TEST_RUN_ID=$(uuidgen)`.
+2. Inspect `tmp/test-logs/<TEST_RUN_ID>.json` plus the observability database table for correlated rows.
+3. Use captured `request_id` / `testRunId` to replay or filter metrics in dashboards.
+4. After triage, prune test log directories as part of CI cleanup to keep artifacts small.
+
+Document this workflow in the project README so contributors know how to gather telemetry evidence when tests fail on CI.
 
 ## Environment Variables
 
