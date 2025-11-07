@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getStudentAvatar } from "@/lib/utils";
 import { 
   LineChart, 
   Line, 
@@ -22,17 +24,20 @@ import {
   Plus,
   ArrowUp,
   ArrowDown,
-  Loader2
+  Loader2,
+  CheckCircle
 } from "lucide-react";
 import { useLocation } from "wouter";
 
-type ApiStudent = { id: number; name: string; grade: string | null };
+type ApiStudent = { id: number; name: string; grade: string | null; photoUrl?: string };
 type ApiIncident = {
   id: number;
   studentId: number;
+  studentName?: string;
   date: string;
   time: string;
   incidentType: string;
+  status?: string;
   createdAt: string;
 };
 
@@ -51,7 +56,24 @@ export default function Dashboard() {
     queryKey: ["/api/incidents"],
   });
 
+  // Fetch all incidents (same as history page for consistency)
+  const { data: allIncidents = [] } = useQuery<ApiIncident[]>({
+    queryKey: ["/api/incidents"],
+  });
+
   const isLoading = studentsLoading || incidentsLoading;
+
+  // Filter for drafts and combine with student names and photos (same logic as history)
+  const draftIncidentsWithNames = (Array.isArray(allIncidents) ? allIncidents : [])
+    .filter((incident: ApiIncident) => incident.status === 'draft')
+    .map((incident: ApiIncident) => {
+      const student = students.find(s => s.id === incident.studentId);
+      return {
+        ...incident,
+        studentName: student?.name || incident.studentName || `Student ${incident.studentId}`,
+        studentPhotoUrl: student?.photoUrl
+      };
+    });
 
   // Calculate real metrics
   const totalStudents = students.length;
@@ -150,7 +172,7 @@ export default function Dashboard() {
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground mt-1">
-          Overview of incidents and student status
+          Weekly overview (unless otherwise stated) of incidents and student status
         </p>
       </div>
 
@@ -243,15 +265,15 @@ export default function Dashboard() {
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Quick Log</CardTitle>
+                <CardTitle>Record Incident</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Quickly record a new incident
+                  Create a detailed ABC Data report
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col gap-3">
                   <p className="text-sm text-muted-foreground">
-                    Need to document a behavior incident? Start a new conversation to create a detailed ABC form.
+                    Start a new conversation to generate a detailed ABC Data report.
                   </p>
                   <Button 
                     onClick={() => setLocation("/")} 
@@ -265,6 +287,86 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  To-Do
+                  {draftIncidentsWithNames.length > 0 && (
+                    <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full">
+                      {draftIncidentsWithNames.length}
+                    </span>
+                  )}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Complete and sign incident drafts
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {draftIncidentsWithNames.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 py-4">
+                    <CheckCircle className="h-8 w-8 text-green-500" />
+                    <p className="text-sm text-muted-foreground text-center">
+                      All caught up! No pending drafts to complete.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      You have {draftIncidentsWithNames.length} draft{draftIncidentsWithNames.length !== 1 ? 's' : ''} to complete:
+                    </p>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {draftIncidentsWithNames.slice(0, 5).map((incident) => (
+                        <div 
+                          key={incident.id} 
+                          className="flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer transition-colors"
+                          onClick={() => setLocation(`/record/${incident.studentId}`)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage 
+                                src={incident.studentPhotoUrl || getStudentAvatar(incident.studentId)} 
+                                alt={incident.studentName} 
+                              />
+                              <AvatarFallback className="text-xs">
+                                {incident.studentName ? 
+                                  incident.studentName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 
+                                  `S${incident.studentId}`
+                                }
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-sm font-medium">
+                                {incident.studentName || `Student ${incident.studentId}`}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {incident.date} at {incident.time}
+                              </p>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm">
+                            Complete
+                          </Button>
+                        </div>
+                      ))}
+                      {draftIncidentsWithNames.length > 5 && (
+                        <p className="text-xs text-muted-foreground text-center pt-2">
+                          And {draftIncidentsWithNames.length - 5} more...
+                        </p>
+                      )}
+                    </div>
+                    <Button 
+                      onClick={() => setLocation("/history")} 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                    >
+                      View All Drafts
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {totalIncidents === 0 ? (

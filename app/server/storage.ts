@@ -20,12 +20,13 @@ export interface IStorage {
   updateStudent(id: number, userId: string, data: Partial<InsertStudent>): Promise<Student | undefined>;
   deleteStudent(id: number, userId: string): Promise<boolean>;
   // Incident operations
-  listIncidents(userId: string, studentId?: number): Promise<Incident[]>;
+  listIncidents(userId: string, studentId?: number, status?: string): Promise<Incident[]>;
   getIncident(id: number, userId: string): Promise<Incident | undefined>;
   createIncident(userId: string, data: InsertIncident): Promise<Incident>;
   updateIncident(id: number, userId: string, data: Partial<InsertIncident>, editedByName?: string): Promise<Incident | undefined>;
   deleteIncident(id: number, userId: string): Promise<boolean>;
   getIncidentEditHistory(incidentId: number, userId: string): Promise<any[]>;
+  listIncidentsForStudent(studentId: number, status?: string): Promise<Incident[]>;
   // Admin operations
   listAllTeachers(): Promise<any[]>;
   getTeacherById(teacherId: string): Promise<User | undefined>;
@@ -33,7 +34,6 @@ export interface IStorage {
   listAllIncidents(): Promise<any[]>;
   getStudentForAdmin(studentId: number): Promise<Student | undefined>;
   getIncidentForAdmin(incidentId: number): Promise<Incident | undefined>;
-  listIncidentsForStudent(studentId: number): Promise<Incident[]>;
   getIncidentEditHistoryForAdmin(incidentId: number): Promise<any[]>;
 }
 
@@ -221,11 +221,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Incidents
-  async listIncidents(userId: string, studentId?: number): Promise<Incident[]> {
-    const where = studentId ? and(eq(incidents.userId, userId), eq(incidents.studentId, studentId)) : eq(incidents.userId, userId);
+  async listIncidents(userId: string, studentId?: number, status?: string): Promise<Incident[]> {
+    let where = studentId ? and(eq(incidents.userId, userId), eq(incidents.studentId, studentId)) : eq(incidents.userId, userId);
+    if (status) {
+      where = and(where, eq(incidents.status, status));
+    }
     const rows = await db
-      .select()
+      .select({
+        id: incidents.id,
+        studentId: incidents.studentId,
+        date: incidents.date,
+        time: incidents.time,
+        summary: incidents.summary,
+        antecedent: incidents.antecedent,
+        behavior: incidents.behavior,
+        consequence: incidents.consequence,
+        incidentType: incidents.incidentType,
+        functionOfBehavior: incidents.functionOfBehavior,
+        location: incidents.location,
+        signature: incidents.signature,
+        signedAt: incidents.signedAt,
+        status: incidents.status,
+        userId: incidents.userId,
+        createdAt: incidents.createdAt,
+        updatedAt: incidents.updatedAt,
+        studentName: students.name
+      })
       .from(incidents)
+      .leftJoin(students, eq(incidents.studentId, students.id))
       .where(where)
       .orderBy(desc(incidents.createdAt));
     return rows;
@@ -409,11 +432,35 @@ export class DatabaseStorage implements IStorage {
     return incident;
   }
 
-  async listIncidentsForStudent(studentId: number): Promise<Incident[]> {
+  async listIncidentsForStudent(studentId: number, status?: string): Promise<Incident[]> {
+    let where = eq(incidents.studentId, studentId);
+    if (status) {
+      where = and(where, eq(incidents.status, status));
+    }
     const rows = await db
-      .select()
+      .select({
+        id: incidents.id,
+        studentId: incidents.studentId,
+        date: incidents.date,
+        time: incidents.time,
+        summary: incidents.summary,
+        antecedent: incidents.antecedent,
+        behavior: incidents.behavior,
+        consequence: incidents.consequence,
+        incidentType: incidents.incidentType,
+        functionOfBehavior: incidents.functionOfBehavior,
+        location: incidents.location,
+        signature: incidents.signature,
+        signedAt: incidents.signedAt,
+        status: incidents.status,
+        userId: incidents.userId,
+        createdAt: incidents.createdAt,
+        updatedAt: incidents.updatedAt,
+        studentName: students.name
+      })
       .from(incidents)
-      .where(eq(incidents.studentId, studentId))
+      .leftJoin(students, eq(incidents.studentId, students.id))
+      .where(where)
       .orderBy(desc(incidents.createdAt));
     return rows;
   }

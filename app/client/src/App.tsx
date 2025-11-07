@@ -10,6 +10,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { PrivacyToggle } from "@/components/privacy-toggle";
 import { PrivacyProvider } from "@/contexts/privacy-context";
 import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Link } from "wouter";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
@@ -23,6 +25,7 @@ import History from "@/pages/history";
 import RecordIncident from "@/pages/record-incident";
 import RecordIncidentSelect from "@/pages/record-incident-select";
 import Settings from "@/pages/settings";
+import HelpSupport from "@/pages/help-support";
 import ParentDashboard from "@/pages/parent-dashboard";
 import AllTeachers from "@/pages/all-teachers";
 import TeacherDetail from "@/pages/teacher-detail";
@@ -54,6 +57,7 @@ function Router() {
         <Route path="/admin/incidents" component={AdminRecentIncidents} />
         <Route path="/students/:studentId" component={StudentDetail} />
         <Route path="/settings" component={Settings} />
+        <Route path="/help" component={HelpSupport} />
         {/* Redirect all other routes to admin home */}
         <Route>
           <Redirect to="/admin/teachers" />
@@ -109,8 +113,32 @@ function Router() {
       <Route path="/record-incident" component={RecordIncidentSelect} />
       <Route path="/record/:studentId" component={RecordIncident} />
       <Route path="/settings" component={Settings} />
+      <Route path="/help" component={HelpSupport} />
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+function UserProfileHeader() {
+  const { user } = useAuth();
+  
+  return (
+    <Link href="/settings" className="flex items-center gap-3 hover:bg-gray-100 rounded-lg p-2 transition-colors">
+      <Avatar className="h-8 w-8">
+        <AvatarImage src={user?.photoUrl || ""} alt={user?.firstName || "User"} />
+        <AvatarFallback>
+          {user?.firstName?.[0]}{user?.lastName?.[0]}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex flex-col items-start">
+        <span className="text-sm font-medium">
+          {user?.firstName} {user?.lastName}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {user?.role}
+        </span>
+      </div>
+    </Link>
   );
 }
 
@@ -127,7 +155,8 @@ function AuthenticatedLayout() {
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="flex items-center justify-between p-4 border-b">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              <UserProfileHeader />
               <PrivacyToggle />
               <ThemeToggle />
             </div>

@@ -244,6 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/incidents", isAuthenticated, async (req, res) => {
     const userId = (req.session as any).userId as string;
     const studentId = req.query.studentId ? Number(req.query.studentId) : undefined;
+    const status = req.query.status as string; // Add status filter
     
     // Check if user is admin
     const user = await storage.getUser(userId);
@@ -251,10 +252,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (user?.role === "administrator" && studentId) {
       // Admin can view incidents for any student
-      rows = await storage.listIncidentsForStudent(studentId);
+      rows = await storage.listIncidentsForStudent(studentId, status);
     } else {
       // Teachers can only view their own incidents
-      rows = await storage.listIncidents(userId, studentId);
+      rows = await storage.listIncidents(userId, studentId, status);
     }
     
     res.json(rows);
