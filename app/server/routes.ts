@@ -994,20 +994,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
+  // ===== TEACHER ROUTES - ORDER MATTERS! =====
+  // POST and DELETE must come BEFORE GET routes with :id parameter
+  
+  // Create a new teacher
+  app.post("/api/admin/teachers", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      console.log("[POST /api/admin/teachers] Request body:", req.body);
+      
+      const { name, email, hireDate } = req.body;
+      
+      // Validate required fields
+      if (!email || !name || !hireDate) {
+        console.log("[POST /api/admin/teachers] Validation failed - missing required fields");
+        return res.status(400).json({ 
+          success: false,
+          message: "Name, email, and hire date are required" 
+        });
+      }
+
+      // Check if user with this email already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        console.log("[POST /api/admin/teachers] User already exists with email:", email);
+        return res.status(409).json({ 
+          success: false,
+          message: "A user with this email already exists" 
+        });
+      }
+
+      // Split name into first and last name (simple split on first space)
+      const nameParts = name.trim().split(/\s+/);
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
+
+      // Create the teacher user
+      const teacher = await storage.createUser({
+        email,
+        firstName,
+        lastName,
+        role: "teacher",
+        photoUrl: null,
+        provider: "local",
+        password: null, // Teacher will need to set password via reset link
+      });
+
+      console.log("[POST /api/admin/teachers] Teacher created successfully:", teacher.id);
+      
+      res.status(201).json({ 
+        success: true,
+        data: teacher 
+      });
+    } catch (error: any) {
+      console.error("[POST /api/admin/teachers] Error creating teacher:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to create teacher" 
+      });
+    }
+  });
+
+  // Delete a teacher - MUST be before GET :id route
+  app.delete("/api/admin/teachers/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      console.log("[DELETE /api/admin/teachers/:id] Teacher ID:", req.params.id);
+      const teacherId = req.params.id;
+      
+      // Check if teacher exists
+      const teacher = await storage.getTeacherById(teacherId);
+      if (!teacher) {
+        console.log("[DELETE /api/admin/teachers/:id] Teacher not found");
+        return res.status(404).json({ 
+          success: false,
+          message: "Teacher not found" 
+        });
+      }
+
+      // Check if teacher has students
+      const students = await storage.getTeacherStudents(teacherId);
+      if (students.length > 0) {
+        console.log("[DELETE /api/admin/teachers/:id] Teacher has students, cannot delete");
+        return res.status(400).json({ 
+          success: false,
+          message: `Cannot delete teacher with ${students.length} assigned student${students.length !== 1 ? 's' : ''}. Please reassign or remove their students first.`,
+          hasStudents: true,
+          studentCount: students.length
+        });
+      }
+
+      // Delete the teacher
+      const success = await storage.deleteUser(teacherId);
+      if (!success) {
+        console.log("[DELETE /api/admin/teachers/:id] Failed to delete from database");
+        return res.status(500).json({ 
+          success: false,
+          message: "Failed to delete teacher" 
+        });
+      }
+
+      console.log("[DELETE /api/admin/teachers/:id] Teacher deleted successfully");
+      res.json({ 
+        success: true,
+        message: "Teacher deleted successfully" 
+      });
+    } catch (error: any) {
+      console.error("[DELETE /api/admin/teachers/:id] Error deleting teacher:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to delete teacher" 
+      });
+    }
+  });
+
   // Get all teachers with student counts
   app.get("/api/admin/teachers", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      console.log("[GET /api/admin/teachers] Fetching all teachers");
       const teachers = await storage.listAllTeachers();
       res.json(teachers);
     } catch (error: any) {
-      console.error("Error fetching teachers:", error);
+      console.error("[GET /api/admin/teachers] Error fetching teachers:", error);
       res.status(500).json({ message: "Failed to fetch teachers" });
     }
   });
 
-  // Get teacher by ID
+  // Get students for a specific teacher (MUST be before generic :id route)
+  app.get("/api/admin/teachers/:id/students", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      console.log("[GET /api/admin/teachers/:id/students] Teacher ID:", req.params.id);
+      const teacherId = req.params.id;
+      const students = await storage.getTeacherStudents(teacherId);
+      res.json(students);
+    } catch (error: any) {
+      console.error("[GET /api/admin/teachers/:id/students] Error:", error);
+      res.status(500).json({ message: "Failed to fetch teacher students" });
+    }
+  });
+
+  // Get teacher by ID (MUST be after more specific routes)
   app.get("/api/admin/teachers/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      console.log("[GET /api/admin/teachers/:id] Teacher ID:", req.params.id);
       const teacherId = req.params.id;
       const teacher = await storage.getTeacherById(teacherId);
       
@@ -1017,20 +1144,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(teacher);
     } catch (error: any) {
-      console.error("Error fetching teacher:", error);
+      console.error("[GET /api/admin/teachers/:id] Error:", error);
       res.status(500).json({ message: "Failed to fetch teacher" });
-    }
-  });
-
-  // Get students for a specific teacher
-  app.get("/api/admin/teachers/:id/students", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const teacherId = req.params.id;
-      const students = await storage.getTeacherStudents(teacherId);
-      res.json(students);
-    } catch (error: any) {
-      console.error("Error fetching teacher students:", error);
-      res.status(500).json({ message: "Failed to fetch teacher students" });
     }
   });
 
@@ -1042,6 +1157,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching all incidents:", error);
       res.status(500).json({ message: "Failed to fetch incidents" });
+    }
+  });
+
+  // Get dashboard statistics
+  app.get("/api/admin/dashboard/stats", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getDashboardStats();
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard stats" });
     }
   });
 

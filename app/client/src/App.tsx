@@ -30,6 +30,7 @@ import ParentDashboard from "@/pages/parent-dashboard";
 import AllTeachers from "@/pages/all-teachers";
 import TeacherDetail from "@/pages/teacher-detail";
 import AdminRecentIncidents from "@/pages/admin-recent-incidents";
+import AdminDashboard from "@/pages/admin-dashboard";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -51,7 +52,8 @@ function Router() {
   if (user?.role === "administrator") {
     return (
       <Switch>
-        <Route path="/" component={AllTeachers} />
+        <Route path="/" component={AdminDashboard} />
+        <Route path="/admin/dashboard" component={AdminDashboard} />
         <Route path="/admin/teachers" component={AllTeachers} />
         <Route path="/admin/teachers/:id" component={TeacherDetail} />
         <Route path="/admin/incidents" component={AdminRecentIncidents} />
@@ -60,7 +62,7 @@ function Router() {
         <Route path="/help" component={HelpSupport} />
         {/* Redirect all other routes to admin home */}
         <Route>
-          <Redirect to="/admin/teachers" />
+          <Redirect to="/admin/dashboard" />
         </Route>
       </Switch>
     );

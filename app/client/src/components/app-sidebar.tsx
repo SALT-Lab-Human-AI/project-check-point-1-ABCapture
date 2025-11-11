@@ -42,6 +42,11 @@ const teacherMenuItems = [
 
 const administratorMenuItems = [
   {
+    title: "Dashboard",
+    url: "/admin/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
     title: "All Teachers",
     url: "/admin/teachers",
     icon: UserCog,

@@ -38,6 +38,7 @@ export interface IStorage {
   getStudentForAdmin(studentId: number): Promise<Student | undefined>;
   getIncidentForAdmin(incidentId: number): Promise<Incident | undefined>;
   getIncidentEditHistoryForAdmin(incidentId: number): Promise<any[]>;
+  getDashboardStats(): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -499,6 +500,49 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(incidentEditHistory.editedAt));
     
     return history;
+  }
+
+  async getDashboardStats(): Promise<any> {
+    console.log('[getDashboardStats] Fetching dashboard statistics...');
+    
+    // Get total teachers count
+    const [teacherCount] = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.role, 'teacher'));
+
+    // Get total students count
+    const [studentCount] = await db
+      .select({ count: count() })
+      .from(students);
+
+    // Get recent incidents count (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const [recentIncidentCount] = await db
+      .select({ count: count() })
+      .from(incidents)
+      .where(sql`${incidents.createdAt} >= ${thirtyDaysAgo.toISOString()}`);
+
+    const totalTeachers = Number(teacherCount?.count ?? 0);
+    const totalStudents = Number(studentCount?.count ?? 0);
+    const totalActiveIncidents = Number(recentIncidentCount?.count ?? 0);
+    const averageStudentsPerTeacher = totalTeachers > 0 ? totalStudents / totalTeachers : 0;
+
+    console.log('[getDashboardStats] Stats:', {
+      totalTeachers,
+      totalStudents,
+      averageStudentsPerTeacher,
+      totalActiveIncidents
+    });
+
+    return {
+      totalTeachers,
+      totalStudents,
+      averageStudentsPerTeacher,
+      totalActiveIncidents,
+    };
   }
 }
 
