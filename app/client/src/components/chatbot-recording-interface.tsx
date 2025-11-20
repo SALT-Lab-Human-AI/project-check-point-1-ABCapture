@@ -206,38 +206,95 @@ export function ChatbotRecordingInterface({
 
         console.log("[ChatbotRecording] ✅ ABC extracted successfully:", extracted);
 
-        // Auto-fill the form with extracted data
-        const newFormData: ABCFormData = {
-          id: Date.now().toString(),
+        // Helper function to convert YYYY-MM-DD to long date format
+        const formatDate = (dateStr: string | null): string | null => {
+          // If extraction returned null, return null (don't default to current date)
+          if (!dateStr) return null;
+          
+          // If already in long format, return as is
+          if (dateStr.includes("January") || dateStr.includes("February") || dateStr.includes("March") || 
+              dateStr.includes("April") || dateStr.includes("May") || dateStr.includes("June") ||
+              dateStr.includes("July") || dateStr.includes("August") || dateStr.includes("September") ||
+              dateStr.includes("October") || dateStr.includes("November") || dateStr.includes("December")) {
+            return dateStr;
+          }
+          
+          // Convert YYYY-MM-DD to long format
+          try {
+            const date = new Date(dateStr + "T00:00:00");
+            return date.toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            });
+          } catch {
+            return dateStr;
+          }
+        };
+
+        // Helper function to convert HH:MM (24-hour) to 12-hour format
+        const formatTime = (timeStr: string | null): string | null => {
+          // If extraction returned null, return null (don't default to current time)
+          if (!timeStr) return null;
+          
+          // If already in 12-hour format (contains AM/PM), return as is
+          if (timeStr.includes("AM") || timeStr.includes("PM") || timeStr.includes("am") || timeStr.includes("pm")) {
+            return timeStr;
+          }
+          
+          // Convert HH:MM (24-hour) to 12-hour format
+          try {
+            const [hours, minutes] = timeStr.split(":");
+            const hour24 = parseInt(hours, 10);
+            const hour12 = hour24 % 12 || 12;
+            const ampm = hour24 >= 12 ? "PM" : "AM";
+            return `${hour12}:${minutes.padStart(2, "0")} ${ampm}`;
+          } catch {
+            return timeStr;
+          }
+        };
+
+        // Create form data from extracted ABC data
+        // The parent component will handle intelligent merging with existing data
+        const formattedDate = formatDate(extracted.date);
+        const formattedTime = formatTime(extracted.time);
+        
+        const extractedFormData: ABCFormData = {
+          id: formData?.id || Date.now().toString(),
           studentName,
-          date: new Date().toLocaleDateString("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          }),
-          time: new Date().toLocaleTimeString("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-          }),
+          // Only use extracted date/time if they are not null, otherwise use existing (never default to current)
+          date: formattedDate !== null 
+            ? formattedDate
+            : (formData?.date || new Date().toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })),
+          time: formattedTime !== null 
+            ? formattedTime
+            : (formData?.time || new Date().toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+              })),
           summary: extracted.summary || "",
           antecedent: extracted.antecedent || "",
           behavior: extracted.behavior || "",
           consequence: extracted.consequence || "",
           incidentType: extracted.incidentType || "Other",
           functionOfBehavior: extracted.functionOfBehavior || [],
-          status: "draft",
+          status: formData?.status || "draft",
         };
 
-        console.log("[ChatbotRecording] 📝 Calling form update with:", newFormData);
+        console.log("[ChatbotRecording] 📝 Calling form update with extracted data:", extractedFormData);
 
         // If this is the first extraction, call onFormGenerated
         if (!formData) {
           console.log("[ChatbotRecording] First extraction - calling onFormGenerated");
-          onFormGenerated(newFormData);
+          onFormGenerated(extractedFormData);
         } else {
-          // Update existing form
+          // Update existing form - parent will handle intelligent merging
           console.log("[ChatbotRecording] Updating existing form - calling onFormUpdate");
-          onFormUpdate(newFormData);
+          onFormUpdate(extractedFormData);
         }
         
         console.log("[ChatbotRecording] ✅ Form update callback called successfully");

@@ -40,11 +40,12 @@ export default function RecordIncident() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<ABCFormData | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showAutoFillNotification, setShowAutoFillNotification] = useState(false);
-  const [signatureName, setSignatureName] = useState("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
+  const [activeEditFields, setActiveEditFields] = useState<Set<string>>(new Set());
+  const [updatedFields, setUpdatedFields] = useState<Set<string>>(new Set());
+  const [signatureName, setSignatureName] = useState<string>("");
 
   // Fetch students from API
   const { data: students = [], isLoading: studentsLoading } = useQuery<ApiStudent[]>({
@@ -148,11 +149,85 @@ export default function RecordIncident() {
     console.log("[RecordIncident] Toast shown, notification displayed");
   };
 
-  const handleFormUpdate = (updatedFormData: ABCFormData) => {
+  const handleFormUpdate = (extractedFormData: ABCFormData) => {
     console.log("[RecordIncident] 🔄 handleFormUpdate called!");
-    console.log("[RecordIncident] Updated form data:", updatedFormData);
+    console.log("[RecordIncident] Extracted form data:", extractedFormData);
+    console.log("[RecordIncident] Current form data:", formData);
+    console.log("[RecordIncident] Active edit fields:", activeEditFields);
     
-    setFormData(updatedFormData);
+    // Merge extracted data with existing form data, respecting active edits
+    if (formData) {
+      const mergedData: ABCFormData = {
+        ...formData,
+        // Only update date/time if extracted values are provided and field isn't being edited
+        // If extraction returned a new value, use it; otherwise keep existing
+        date: activeEditFields.has('date') 
+          ? formData.date 
+          : (extractedFormData.date && extractedFormData.date.trim() && extractedFormData.date !== formData.date ? extractedFormData.date : formData.date),
+        time: activeEditFields.has('time') 
+          ? formData.time 
+          : (extractedFormData.time && extractedFormData.time.trim() && extractedFormData.time !== formData.time ? extractedFormData.time : formData.time),
+        // Only update fields that aren't being actively edited AND have new non-empty values
+        summary: activeEditFields.has('summary') 
+          ? formData.summary 
+          : (extractedFormData.summary && extractedFormData.summary.trim() ? extractedFormData.summary : formData.summary),
+        antecedent: activeEditFields.has('antecedent') 
+          ? formData.antecedent 
+          : (extractedFormData.antecedent && extractedFormData.antecedent.trim() ? extractedFormData.antecedent : formData.antecedent),
+        behavior: activeEditFields.has('behavior') 
+          ? formData.behavior 
+          : (extractedFormData.behavior && extractedFormData.behavior.trim() ? extractedFormData.behavior : formData.behavior),
+        consequence: activeEditFields.has('consequence') 
+          ? formData.consequence 
+          : (extractedFormData.consequence && extractedFormData.consequence.trim() ? extractedFormData.consequence : formData.consequence),
+        incidentType: activeEditFields.has('incidentType') 
+          ? formData.incidentType 
+          : (extractedFormData.incidentType && extractedFormData.incidentType !== "Other" ? extractedFormData.incidentType : formData.incidentType),
+        functionOfBehavior: activeEditFields.has('functionOfBehavior') 
+          ? formData.functionOfBehavior 
+          : (extractedFormData.functionOfBehavior && extractedFormData.functionOfBehavior.length > 0 ? extractedFormData.functionOfBehavior : formData.functionOfBehavior),
+      };
+      
+      // Track which fields were actually updated (for visual feedback)
+      const newUpdatedFields = new Set<string>();
+      if (!activeEditFields.has('date') && extractedFormData.date && extractedFormData.date.trim() && extractedFormData.date !== formData.date) {
+        newUpdatedFields.add('date');
+      }
+      if (!activeEditFields.has('time') && extractedFormData.time && extractedFormData.time.trim() && extractedFormData.time !== formData.time) {
+        newUpdatedFields.add('time');
+      }
+      if (!activeEditFields.has('summary') && extractedFormData.summary && extractedFormData.summary.trim() && extractedFormData.summary !== formData.summary) {
+        newUpdatedFields.add('summary');
+      }
+      if (!activeEditFields.has('antecedent') && extractedFormData.antecedent && extractedFormData.antecedent.trim() && extractedFormData.antecedent !== formData.antecedent) {
+        newUpdatedFields.add('antecedent');
+      }
+      if (!activeEditFields.has('behavior') && extractedFormData.behavior && extractedFormData.behavior.trim() && extractedFormData.behavior !== formData.behavior) {
+        newUpdatedFields.add('behavior');
+      }
+      if (!activeEditFields.has('consequence') && extractedFormData.consequence && extractedFormData.consequence.trim() && extractedFormData.consequence !== formData.consequence) {
+        newUpdatedFields.add('consequence');
+      }
+      if (!activeEditFields.has('incidentType') && extractedFormData.incidentType && extractedFormData.incidentType !== "Other" && extractedFormData.incidentType !== formData.incidentType) {
+        newUpdatedFields.add('incidentType');
+      }
+      if (!activeEditFields.has('functionOfBehavior') && extractedFormData.functionOfBehavior && extractedFormData.functionOfBehavior.length > 0 && JSON.stringify(extractedFormData.functionOfBehavior) !== JSON.stringify(formData.functionOfBehavior)) {
+        newUpdatedFields.add('functionOfBehavior');
+      }
+      
+      setUpdatedFields(newUpdatedFields);
+      setFormData(mergedData);
+      
+      // Clear the highlight after 2 seconds
+      if (newUpdatedFields.size > 0) {
+        setTimeout(() => {
+          setUpdatedFields(new Set());
+        }, 2000);
+      }
+    } else {
+      setFormData(extractedFormData);
+    }
+    
     setShowAutoFillNotification(true);
     setHasUnsavedChanges(true);
     
@@ -192,9 +267,6 @@ export default function RecordIncident() {
     }
   };
 
-  const handleEditForm = () => {
-    setIsEditing(true);
-  };
 
   const deleteIncidentMutation = useMutation({
     mutationFn: async (incidentId: string) => {
@@ -220,7 +292,6 @@ export default function RecordIncident() {
         description: "The incident has been deleted successfully.",
       });
       setFormData(null);
-      setIsEditing(false);
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/incidents"] });
       queryClient.invalidateQueries({ queryKey: [`/api/incidents?studentId=${params?.studentId}`] });
@@ -237,16 +308,7 @@ export default function RecordIncident() {
   const handleSaveEdit = (updatedData: ABCFormData) => {
     console.log("[RecordIncident] Saving edited form:", updatedData);
     setFormData(updatedData);
-    setIsEditing(false);
-    setHasUnsavedChanges(false);
-    toast({
-      title: "Changes Saved",
-      description: "Your edits have been saved to the draft.",
-    });
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
+    setHasUnsavedChanges(true);
   };
 
   const handleDeleteIncident = () => {
@@ -394,174 +456,23 @@ export default function RecordIncident() {
             </div>
           )}
 
-          {isEditing && formData ? (
+          {formData ? (
             <ABCFormEdit
               data={formData}
               onSave={handleSaveEdit}
-              onCancel={handleCancelEdit}
+              onCancel={() => {}}
               onDelete={formData.status === "draft" && formData.id ? handleDeleteIncident : undefined}
+              activeEditFields={activeEditFields}
+              onActiveEditFieldsChange={setActiveEditFields}
+              updatedFields={updatedFields}
+              signatureName={signatureName}
+              onSignatureNameChange={setSignatureName}
+              onSaveDraft={handleSaveDraft}
+              onSignAndSave={handleSignAndSave}
+              isSaving={isSaving}
+              hasUnsavedChanges={hasUnsavedChanges}
+              onClearForm={handleClearForm}
             />
-          ) : formData ? (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>ABC Incident Form</CardTitle>
-                  <div className="flex gap-2">
-                    <Badge variant={hasUnsavedChanges ? "secondary" : "default"} className="flex items-center gap-1">
-                      {hasUnsavedChanges ? (
-                        <>
-                          <Clock className="h-3 w-3" />
-                          Not Saved
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-3 w-3" />
-                          Changes Saved
-                        </>
-                      )}
-                    </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearForm}
-                    >
-                      Clear Form
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleEditForm}
-                    >
-                      Edit
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Student: {formData.studentName} • {formData.date} at {formData.time}
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(248, 52, 34, 0.08)' }}>
-                  <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                    <img src={aBlockIcon} alt="A" className="w-6 h-6" />
-                    Antecedent
-                  </h3>
-                  <p className="text-sm pl-9 whitespace-pre-wrap">
-                    {formData.antecedent || "Not yet filled"}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(61, 148, 53, 0.08)' }}>
-                  <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                    <img src={bBlockIcon} alt="B" className="w-6 h-6" />
-                    Behavior
-                  </h3>
-                  <p className="text-sm pl-9 whitespace-pre-wrap">
-                    {formData.behavior || "Not yet filled"}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(249, 194, 55, 0.08)' }}>
-                  <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                    <img src={cBlockIcon} alt="C" className="w-6 h-6" />
-                    Consequence
-                  </h3>
-                  <p className="text-sm pl-9 whitespace-pre-wrap">
-                    {formData.consequence || "Not yet filled"}
-                  </p>
-                </div>
-
-                {formData.summary && (
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2">Summary</h3>
-                    <p className="text-sm">{formData.summary}</p>
-                  </div>
-                )}
-
-                {formData.incidentType && (
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2">Incident Type</h3>
-                    <Badge>{formData.incidentType}</Badge>
-                  </div>
-                )}
-
-                {formData.functionOfBehavior && formData.functionOfBehavior.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2">Function of Behavior</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.functionOfBehavior.map((func, idx) => (
-                        <Badge key={idx} variant="secondary">{func}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <Label className="text-lg">Signature</Label>
-                  <div className="space-y-2">
-                    <Label htmlFor="signature">Type your full name to sign</Label>
-                    <Input
-                      id="signature"
-                      placeholder="Your full name"
-                      value={signatureName}
-                      onChange={(e) => setSignatureName(e.target.value)}
-                      data-testid="input-signature"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t space-y-2">
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleSaveDraft}
-                      disabled={isSaving || !formData.antecedent || !formData.behavior || !formData.consequence}
-                      variant="outline"
-                      className="flex-1"
-                      size="lg"
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        "Save Draft"
-                      )}
-                    </Button>
-                    <Button
-                      onClick={handleSignAndSave}
-                      disabled={isSaving || !formData.antecedent || !formData.behavior || !formData.consequence || !signatureName.trim()}
-                      className="flex-1"
-                      size="lg"
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <PenTool className="h-4 w-4 mr-2" />
-                          Save Incident
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  {(!formData.antecedent || !formData.behavior || !formData.consequence) && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Please ensure all ABC fields are filled before saving
-                    </p>
-                  )}
-                  {!signatureName.trim() && formData.antecedent && formData.behavior && formData.consequence && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Signature required to save incident
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           ) : (
             <Card className="flex items-center justify-center" style={{ height: 'calc(100vh - 280px)', minHeight: '600px', overflow: 'auto' }}>
               <CardContent className="text-center flex flex-col items-center">

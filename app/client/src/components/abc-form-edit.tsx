@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, Clock, X, PenTool, Check, Trash2 } from "lucide-react";
+import { Calendar, Clock, X, PenTool, Check, Trash2, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import aBlockIcon from "@assets/A Block.png";
 import bBlockIcon from "@assets/B Block.png";
@@ -39,6 +39,16 @@ interface ABCFormEditProps {
   onSave: (data: ABCFormData) => void;
   onCancel: () => void;
   onDelete?: () => void;
+  activeEditFields?: Set<string>;
+  onActiveEditFieldsChange?: (fields: Set<string>) => void;
+  updatedFields?: Set<string>;
+  signatureName?: string;
+  onSignatureNameChange?: (name: string) => void;
+  onSaveDraft?: () => void;
+  onSignAndSave?: () => void;
+  isSaving?: boolean;
+  hasUnsavedChanges?: boolean;
+  onClearForm?: () => void;
 }
 
 const incidentTypes = [
@@ -59,13 +69,80 @@ const behaviorFunctions = [
   "Communication",
 ];
 
-export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditProps) {
+export function ABCFormEdit({ 
+  data, 
+  onSave, 
+  onCancel, 
+  onDelete,
+  activeEditFields,
+  onActiveEditFieldsChange,
+  updatedFields = new Set(),
+  signatureName: externalSignatureName,
+  onSignatureNameChange,
+  onSaveDraft,
+  onSignAndSave,
+  isSaving = false,
+  hasUnsavedChanges = false,
+  onClearForm,
+}: ABCFormEditProps) {
   const [formData, setFormData] = useState(data);
   const [selectedFunctions, setSelectedFunctions] = useState<string[]>(
     data.functionOfBehavior
   );
-  const [signatureName, setSignatureName] = useState(data.signature || "");
-  const [isSignatureMode, setIsSignatureMode] = useState(false);
+  const [internalSignatureName, setInternalSignatureName] = useState(data.signature || "");
+  const signatureName = externalSignatureName !== undefined ? externalSignatureName : internalSignatureName;
+  const setSignatureName = onSignatureNameChange || setInternalSignatureName;
+  
+  // Update form data when prop changes (from AI updates)
+  // But preserve fields that are currently being edited
+  useEffect(() => {
+    if (activeEditFields && activeEditFields.size > 0) {
+      // Only update fields that aren't being actively edited
+      setFormData(prev => ({
+        ...prev,
+        ...data,
+        // Preserve actively edited fields
+        summary: activeEditFields.has('summary') ? prev.summary : data.summary,
+        antecedent: activeEditFields.has('antecedent') ? prev.antecedent : data.antecedent,
+        behavior: activeEditFields.has('behavior') ? prev.behavior : data.behavior,
+        consequence: activeEditFields.has('consequence') ? prev.consequence : data.consequence,
+        incidentType: activeEditFields.has('incidentType') ? prev.incidentType : data.incidentType,
+      }));
+      // Only update functionOfBehavior if not being edited
+      if (!activeEditFields.has('functionOfBehavior')) {
+        setSelectedFunctions(data.functionOfBehavior);
+      }
+    } else {
+      // No active edits, safe to update everything
+      setFormData(data);
+      setSelectedFunctions(data.functionOfBehavior);
+    }
+  }, [data, activeEditFields]);
+  
+  // Track active edit fields
+  const handleFieldFocus = (fieldName: string) => {
+    if (onActiveEditFieldsChange) {
+      const newSet = new Set(activeEditFields || []);
+      newSet.add(fieldName);
+      onActiveEditFieldsChange(newSet);
+    }
+  };
+  
+  const handleFieldBlur = (fieldName: string) => {
+    if (onActiveEditFieldsChange) {
+      const newSet = new Set(activeEditFields || []);
+      newSet.delete(fieldName);
+      onActiveEditFieldsChange(newSet);
+    }
+  };
+  
+  // Get highlight class for updated fields
+  const getFieldHighlightClass = (fieldName: string) => {
+    if (updatedFields.has(fieldName)) {
+      return "ring-2 ring-primary/50 bg-primary/5 transition-all duration-2000";
+    }
+    return "";
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,11 +176,32 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <CardTitle className="text-2xl">ABC Incident Form</CardTitle>
-              <p className="text-muted-foreground mt-1">Student: {formData.studentName}</p>
+              <p className="text-muted-foreground mt-1">Student: {formData.studentName} • {formData.date} at {formData.time}</p>
             </div>
-            <Badge variant={isLocked ? "default" : "secondary"}>
-              {isLocked ? "Signed" : "Draft"}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant={hasUnsavedChanges ? "secondary" : "default"} className="flex items-center gap-1">
+                {hasUnsavedChanges ? (
+                  <>
+                    <Clock className="h-3 w-3" />
+                    Not Saved
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-3 w-3" />
+                    Changes Saved
+                  </>
+                )}
+              </Badge>
+              {onClearForm && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onClearForm}
+                >
+                  Clear Form
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -145,6 +243,10 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
                 onValueChange={(value) =>
                   setFormData({ ...formData, incidentType: value })
                 }
+                onOpenChange={(open) => {
+                  if (open) handleFieldFocus('incidentType');
+                  else handleFieldBlur('incidentType');
+                }}
                 disabled={isLocked}
               >
                 <SelectTrigger id="incidentType" data-testid="select-edit-incident-type">
@@ -182,7 +284,7 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
 
           <Separator />
 
-          <div className="space-y-2">
+          <div className={`space-y-2 ${getFieldHighlightClass('summary')} p-2 rounded-lg`}>
             <Label htmlFor="summary">Summary</Label>
             <Textarea
               id="summary"
@@ -190,6 +292,8 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
               onChange={(e) =>
                 setFormData({ ...formData, summary: e.target.value })
               }
+              onFocus={() => handleFieldFocus('summary')}
+              onBlur={() => handleFieldBlur('summary')}
               className="min-h-[100px]"
               disabled={isLocked}
               data-testid="input-edit-summary"
@@ -199,7 +303,7 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
           <Separator />
 
           <div className="space-y-4">
-            <div className="space-y-2 p-4 rounded-lg" style={{ backgroundColor: 'rgba(248, 52, 34, 0.08)' }}>
+            <div className={`space-y-2 p-4 rounded-lg ${getFieldHighlightClass('antecedent')}`} style={{ backgroundColor: 'rgba(248, 52, 34, 0.08)' }}>
               <Label htmlFor="antecedent" className="flex items-center gap-2 text-lg">
                 <img src={aBlockIcon} alt="A" className="w-6 h-6" />
                 Antecedent
@@ -210,6 +314,8 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
                 onChange={(e) =>
                   setFormData({ ...formData, antecedent: e.target.value })
                 }
+                onFocus={() => handleFieldFocus('antecedent')}
+                onBlur={() => handleFieldBlur('antecedent')}
                 className="min-h-[100px]"
                 placeholder="What happened immediately before the behavior?"
                 disabled={isLocked}
@@ -217,7 +323,7 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
               />
             </div>
 
-            <div className="space-y-2 p-4 rounded-lg" style={{ backgroundColor: 'rgba(61, 148, 53, 0.08)' }}>
+            <div className={`space-y-2 p-4 rounded-lg ${getFieldHighlightClass('behavior')}`} style={{ backgroundColor: 'rgba(61, 148, 53, 0.08)' }}>
               <Label htmlFor="behavior" className="flex items-center gap-2 text-lg">
                 <img src={bBlockIcon} alt="B" className="w-6 h-6" />
                 Behavior
@@ -228,6 +334,8 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
                 onChange={(e) =>
                   setFormData({ ...formData, behavior: e.target.value })
                 }
+                onFocus={() => handleFieldFocus('behavior')}
+                onBlur={() => handleFieldBlur('behavior')}
                 className="min-h-[100px]"
                 placeholder="Describe the specific behavior observed"
                 disabled={isLocked}
@@ -235,7 +343,7 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
               />
             </div>
 
-            <div className="space-y-2 p-4 rounded-lg" style={{ backgroundColor: 'rgba(249, 194, 55, 0.08)' }}>
+            <div className={`space-y-2 p-4 rounded-lg ${getFieldHighlightClass('consequence')}`} style={{ backgroundColor: 'rgba(249, 194, 55, 0.08)' }}>
               <Label htmlFor="consequence" className="flex items-center gap-2 text-lg">
                 <img src={cBlockIcon} alt="C" className="w-6 h-6" />
                 Consequence
@@ -246,6 +354,8 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
                 onChange={(e) =>
                   setFormData({ ...formData, consequence: e.target.value })
                 }
+                onFocus={() => handleFieldFocus('consequence')}
+                onBlur={() => handleFieldBlur('consequence')}
                 className="min-h-[100px]"
                 placeholder="What happened immediately after the behavior?"
                 disabled={isLocked}
@@ -255,25 +365,91 @@ export function ABCFormEdit({ data, onSave, onCancel, onDelete }: ABCFormEditPro
           </div>
 
         </CardContent>
-        <CardFooter className="flex gap-2 justify-between">
-          {formData.status === "draft" && onDelete && (
-            <Button 
-              type="button" 
-              variant="destructive" 
-              onClick={onDelete}
-              data-testid="button-delete-incident"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
-          )}
-          <div className="flex gap-2 ml-auto">
-            <Button type="button" variant="outline" onClick={onCancel} data-testid="button-cancel-edit">
-              Cancel
-            </Button>
-            <Button type="submit" data-testid="button-save-edit">
-              Save Changes
-            </Button>
+        <CardFooter className="flex flex-col gap-4">
+          <Separator />
+          <div className="space-y-4 w-full">
+            <div className="space-y-2">
+              <Label htmlFor="signature">Type your full name to sign</Label>
+              <Input
+                id="signature"
+                placeholder="Your full name"
+                value={signatureName}
+                onChange={(e) => setSignatureName(e.target.value)}
+                data-testid="input-signature"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              {formData.status === "draft" && onDelete && (
+                <Button 
+                  type="button" 
+                  variant="destructive" 
+                  onClick={onDelete}
+                  data-testid="button-delete-incident"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+              {onSaveDraft && (
+                <Button
+                  type="button"
+                  onClick={onSaveDraft}
+                  disabled={isSaving || !formData.antecedent || !formData.behavior || !formData.consequence}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Draft"
+                  )}
+                </Button>
+              )}
+              {onSignAndSave && (
+                <Button
+                  type="button"
+                  onClick={onSignAndSave}
+                  disabled={isSaving || !formData.antecedent || !formData.behavior || !formData.consequence || !signatureName.trim()}
+                  className="flex-1"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <PenTool className="h-4 w-4 mr-2" />
+                      Save Incident
+                    </>
+                  )}
+                </Button>
+              )}
+              {!onSaveDraft && !onSignAndSave && (
+                <>
+                  <Button type="button" variant="outline" onClick={onCancel} data-testid="button-cancel-edit">
+                    Cancel
+                  </Button>
+                  <Button type="submit" data-testid="button-save-edit">
+                    Save Changes
+                  </Button>
+                </>
+              )}
+            </div>
+            {(!formData.antecedent || !formData.behavior || !formData.consequence) && (
+              <p className="text-xs text-muted-foreground text-center">
+                Please ensure all ABC fields are filled before saving
+              </p>
+            )}
+            {!signatureName.trim() && formData.antecedent && formData.behavior && formData.consequence && onSignAndSave && (
+              <p className="text-xs text-muted-foreground text-center">
+                Signature required to save incident
+              </p>
+            )}
           </div>
         </CardFooter>
       </form>

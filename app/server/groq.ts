@@ -40,8 +40,17 @@ CRITICAL RULES - PRIORITIZE SPEED:
 5. Be conversational but CONCISE - no interrogations
 6. NEVER ask "Do you want to save?" - that's the teacher's decision via the form button
 
+IMPORTANT - DATE AND TIME (CRITICAL):
+- BEFORE showing "Incident analyzed", check if date/time was mentioned
+- If the teacher mentions when the incident occurred (e.g., "at 2:30", "this morning", "yesterday", "today", "during lunch", "at 10am"), acknowledge it and proceed
+- Date is considered mentioned if teacher says "today", "yesterday", or a specific date - you don't need to ask for date in these cases
+- If the TIME is NOT mentioned in the initial description, you MUST ask: "What time did this incident occur?" BEFORE showing the analysis
+- NEVER show "Incident analyzed" without asking for time if it wasn't mentioned
+- NEVER assume the current time or date - always ask if unclear (except "today"/"yesterday" which are valid date mentions)
+- If the teacher asks to change the time (e.g., "change it to 10am", "make it 10am", "set time to 10am"), acknowledge and confirm the change
+
 RESPONSE FORMAT - FOLLOW EXACTLY:
-When teacher describes an incident, respond with this exact format (including the dashes, colons, and bold formatting):
+When teacher describes an incident WITH time mentioned, respond with this exact format:
 
 "Incident analyzed:
 - **Antecedent:** [what happened before]
@@ -50,6 +59,8 @@ When teacher describes an incident, respond with this exact format (including th
 
 ✓ The ABC form has been auto-filled. Please review the details in the form and click Save Incident when ready."
 
+If time is NOT mentioned, ask first, then show the analysis after they respond.
+
 CRITICAL FORMATTING RULES:
 1. Always start with "Incident analyzed:" on its own line
 2. Each ABC component must be on its own line starting with a dash and space
@@ -57,17 +68,62 @@ CRITICAL FORMATTING RULES:
 4. Each label must be followed by a colon and a space
 5. Keep the confirmation message
 
-ONLY ASK FOR CONSEQUENCE if not mentioned (it's the most important follow-up).
+ONLY ASK FOR:
+- Consequence if not mentioned (it's the most important follow-up)
+- Date/time if not mentioned or unclear (NEVER assume current time)
+
+CRITICAL FLOW:
+1. Teacher describes incident
+2. Check if time was mentioned
+3. If NO time mentioned → Ask "What time did this incident occur?" (DO NOT show analysis yet)
+4. If time WAS mentioned → Show analysis immediately
+5. After teacher provides time → Show analysis
 
 BAD EXAMPLE (too many questions):
 "Can you tell me: 1. What time? 2. What was student doing before? 3. How many times? 4. Other students involved? 5. Duration?"
 
-GOOD EXAMPLE (extract immediately):
-"I see Johnny hit Sarah when asked to sit during circle time. What did you do after the incident?"
+BAD EXAMPLE (assuming time):
+"I see Johnny hit Sarah when asked to sit during circle time. I'll record this as happening right now."
+
+BAD EXAMPLE (showing analysis without asking for time):
+"Incident analyzed:
+- **Antecedent:** Asked to sit during circle time
+- **Behavior:** Hit Sarah
+- **Consequence:** [ask if not mentioned]"
+(If time wasn't mentioned, you MUST ask first!)
+
+GOOD EXAMPLE (date mentioned, ask for time):
+Teacher: "Today, Johnny hit Sarah during circle time"
+You: "I see Johnny hit Sarah when asked to sit during circle time today. What time did this incident occur?"
+
+GOOD EXAMPLE (no date/time mentioned, ask for time):
+Teacher: "Johnny hit Sarah during circle time"
+You: "I see Johnny hit Sarah when asked to sit during circle time. What time did this incident occur?"
+
+GOOD EXAMPLE (date and time both mentioned, proceed immediately):
+Teacher: "Yesterday at 2pm, Johnny hit Sarah during circle time"
+You: "Incident analyzed:
+- **Antecedent:** Asked to sit during circle time
+- **Behavior:** Hit Sarah
+- **Consequence:** [ask if not mentioned]
+
+✓ The ABC form has been auto-filled. Please review the details in the form and click Save Incident when ready."
+
+GOOD EXAMPLE (after getting time):
+"Incident analyzed:
+- **Antecedent:** Asked to sit during circle time
+- **Behavior:** Hit Sarah
+- **Consequence:** [ask if not mentioned]
+
+✓ The ABC form has been auto-filled. Please review the details in the form and click Save Incident when ready."
+
+GOOD EXAMPLE (time change request):
+Teacher: "Change the time to 10am"
+You: "I've updated the time to 10:00 AM. The form has been updated."
 
 NEVER ask to save - just confirm the form is filled and let the teacher use the Save button.
 
-Remember: SPEED over perfection. Teachers need FAST assistance, not a questionnaire.`,
+Remember: SPEED over perfection. Teachers need FAST assistance, not a questionnaire. But NEVER assume date/time - always ask if unclear.`,
         },
         ...messages,
       ],
@@ -276,6 +332,8 @@ export async function extractABCData(conversationMessages: ChatMessage[]): Promi
   consequence: string;
   incidentType: string;
   functionOfBehavior: string[];
+  date?: string | null;
+  time?: string | null;
 }> {
   console.log(`[Groq] Extracting ABC data from ${conversationMessages.length} messages`);
   
@@ -285,13 +343,26 @@ export async function extractABCData(conversationMessages: ChatMessage[]): Promi
         role: "system",
         content: `You are an expert at extracting structured ABC (Antecedent-Behavior-Consequence) data from teacher conversations about behavioral incidents.
 
-Analyze the conversation and extract:
-1. **Summary**: A brief 1-2 sentence overview of the incident
-2. **Antecedent**: What was happening immediately before the behavior (setting, activity, triggers)
-3. **Behavior**: Specific, observable description of what the student did
-4. **Consequence**: What happened immediately after the behavior
-5. **Incident Type**: Categorize as one of: Physical Aggression, Verbal Outburst, Self-Injury, Property Destruction, Elopement, Noncompliance, Other
-6. **Function of Behavior**: Select from: Escape/Avoidance, Attention-Seeking, Sensory, Tangible/Access, Communication
+IMPORTANT: Analyze the ENTIRE conversation history provided below. Information may be spread across multiple messages, including follow-up questions and answers. Extract the most complete and accurate information from ALL messages in the conversation.
+
+Extract from the full conversation:
+1. **Summary**: A brief 1-2 sentence overview of the incident (use information from all relevant messages)
+2. **Antecedent**: What was happening immediately before the behavior (setting, activity, triggers) - gather from all mentions
+3. **Behavior**: Specific, observable description of what the student did - use the most complete description from the conversation
+4. **Consequence**: What happened immediately after the behavior - check all messages for this information
+5. **Date**: Extract the date when the incident actually occurred. Look for explicit mentions like "today", "yesterday", "Monday", "last week", specific dates (e.g., "January 15th", "1/15/2025"), or clear relative time references. IMPORTANT: If the teacher says "today", calculate and return TODAY's actual date in YYYY-MM-DD format. If they say "yesterday", calculate and return YESTERDAY's actual date in YYYY-MM-DD format. If they say "just now" or "a few minutes ago", use today's date. Format as YYYY-MM-DD (e.g., "2025-01-15"). If no date is mentioned or unclear, return null - DO NOT assume current date unless explicitly mentioned as "today" or similar.
+6. **Time**: Extract the specific time when the incident actually occurred ONLY if explicitly mentioned. Look for explicit time mentions like "at 2:30", "around 3pm", "during lunch", "this morning", "afternoon", "at 2:30 PM", "10am", "10:00 AM", etc. IMPORTANT: Also extract time if the teacher asks to CHANGE or UPDATE the time (e.g., "change it to 10am", "make it 10am", "set time to 10am", "update time to 10am", "it was at 10am"). Format as HH:MM in 24-hour format (e.g., "14:30" for 2:30 PM, "09:15" for 9:15 AM, "10:00" for 10:00 AM). If the teacher says "just now" or "a few minutes ago", you can approximate based on context if there's a clear reference point, but prefer explicit times. If no time is mentioned or unclear, return null - DO NOT assume current time.
+7. **Incident Type**: CRITICAL - Categorize as one of: Physical Aggression, Verbal Outburst, Self-Injury, Property Destruction, Elopement, Noncompliance, Other. Analyze the behavior description carefully to determine the most appropriate category. If the behavior involves physical contact with others, use "Physical Aggression". If it involves yelling, cursing, or verbal disruption, use "Verbal Outburst". If it involves breaking or damaging items, use "Property Destruction". If it involves leaving without permission, use "Elopement". If it involves refusing to follow directions, use "Noncompliance". Only use "Other" if none of the above categories fit.
+8. **Function of Behavior**: CRITICAL - Analyze WHY the behavior occurred based on the antecedent and consequence. Select ALL that apply from: Escape/Avoidance (student wanted to avoid/escape a task or situation), Attention-Seeking (student wanted attention from adults or peers), Sensory (behavior provided sensory stimulation), Tangible/Access (student wanted access to an item or activity), Communication (student was trying to communicate a need). If the consequence was removing the student or ending a task, likely "Escape/Avoidance". If the consequence was giving attention, likely "Attention-Seeking". If unclear, include "Communication" as a default.
+
+CRITICAL RULES FOR DATE/TIME:
+- Extract date if explicitly mentioned including "today" or "yesterday" - calculate the actual date for these
+- If the conversation mentions "just now" or "a few minutes ago", you may use today's date and approximate time
+- If the conversation says "yesterday", calculate and return yesterday's actual date (YYYY-MM-DD format)
+- If the conversation says "today", calculate and return today's actual date (YYYY-MM-DD format)
+- If the conversation says "this morning", "this afternoon", etc., use today's date and approximate time if possible
+- If date/time is NOT mentioned or is unclear (and not "today"/"yesterday"), return null for both date and time
+- NEVER assume the current date/time just because it's not mentioned - but DO extract when "today" or "yesterday" is mentioned
 
 Return ONLY a valid JSON object with these exact keys (no markdown, no extra text):
 {
@@ -299,6 +370,8 @@ Return ONLY a valid JSON object with these exact keys (no markdown, no extra tex
   "antecedent": "...",
   "behavior": "...",
   "consequence": "...",
+  "date": "YYYY-MM-DD or null",
+  "time": "HH:MM or null",
   "incidentType": "...",
   "functionOfBehavior": ["..."]
 }`,
@@ -322,11 +395,47 @@ Return ONLY a valid JSON object with these exact keys (no markdown, no extra tex
     
     const extracted = JSON.parse(responseText);
 
+    // Process date: convert "today" and "yesterday" to actual dates if needed
+    let processedDate = extracted.date || null;
+    if (processedDate) {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+      const yesterdayStr = yesterday.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      // If AI returned "today" or "yesterday" as string, convert to actual date
+      if (typeof processedDate === 'string') {
+        const dateLower = processedDate.toLowerCase().trim();
+        if (dateLower === 'today' || dateLower.includes('today')) {
+          processedDate = todayStr;
+        } else if (dateLower === 'yesterday' || dateLower.includes('yesterday')) {
+          processedDate = yesterdayStr;
+        }
+        // If it's already in YYYY-MM-DD format, keep it
+        // Otherwise, try to parse it
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(processedDate)) {
+          try {
+            const parsedDate = new Date(processedDate);
+            if (!isNaN(parsedDate.getTime())) {
+              processedDate = parsedDate.toISOString().split('T')[0];
+            }
+          } catch {
+            // If parsing fails, keep original or set to null
+            processedDate = null;
+          }
+        }
+      }
+    }
+
     const result = {
       summary: extracted.summary || "",
       antecedent: extracted.antecedent || "",
       behavior: extracted.behavior || "",
       consequence: extracted.consequence || "",
+      date: processedDate,
+      time: extracted.time || null,
       incidentType: extracted.incidentType || "Other",
       functionOfBehavior: Array.isArray(extracted.functionOfBehavior) 
         ? extracted.functionOfBehavior 
@@ -338,6 +447,8 @@ Return ONLY a valid JSON object with these exact keys (no markdown, no extra tex
       hasAntecedent: !!result.antecedent,
       hasBehavior: !!result.behavior,
       hasConsequence: !!result.consequence,
+      date: result.date,
+      time: result.time,
       incidentType: result.incidentType,
     });
 
