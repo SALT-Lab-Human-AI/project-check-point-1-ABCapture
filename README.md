@@ -137,11 +137,11 @@ ABC data is a systematic observation method used in Applied Behavior Analysis (A
 
 ---
 
-**Checkpoint 4: Evaluation & Final Report (Planned)**
-- **Jiya**: Will lead the **user study design** and data analysis, including both quantitative (task success, satisfaction) and qualitative insights. Will draft the **Results** and **Discussion** sections.  
-- **Sara**: Will edit and compile the **Final Report** (3,500–4,500 words), write the **Related Work** and **Future Work** sections, and manage final formatting and submission.  
-- **Manuela**: Will synthesize qualitative feedback, design **charts and visuals** for the report, and help prepare the **final presentation**.  
-- **Rithika**: Will consolidate all **final deliverables** (code, cleaned data, scripts, and prompt files), document **Methodology** and **Risks & Limitations**, and ensure reproducibility.
+**Checkpoint 4: Evaluation & Final Report**
+- **Sara**: Led the **user study design** and data analysis, including both quantitative (task success, satisfaction) and qualitative insights. Drafted the **Results** and **Discussion** sections. Worked on the presentation.
+- **Jiya**: Edited and compiled the **Final Report** (3,500–4,500 words), wrote the **Limitations, Risks, & Ethical Considerations** and **Conclusion & Future Work** sections, and manage final formatting and submission. Worked on the presentation.
+- **Manuela**: Worked on **Method (system description + evaluation design)** section. Worked on the presentation.
+- **Rithika**: Worked on **Abstract, Introduction & Related Work**. Worked on the presentation.
 
 ---
 
