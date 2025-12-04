@@ -6,7 +6,7 @@
 graph TB
     subgraph Client["CLIENT LAYER - React + TypeScript"]
         UI[User Interface]
-        Pages[Pages: Login, Teacher, Admin]
+        Pages[Pages: Login, Teacher, Admin, Parent]
         Components[Components: Forms, Charts, Voice Input]
         State[State Management: TanStack Query]
     end
@@ -19,7 +19,7 @@ graph TB
     end
 
     subgraph External["EXTERNAL SERVICES"]
-        Groq[Groq AI: Whisper + LLaMA 3.1]
+        Groq[Groq AI: Whisper + LLaMA 3.3 70B]
         OAuth[Google OAuth 2.0]
         SMTP[Email SMTP]
     end
@@ -52,9 +52,9 @@ graph LR
     B -->|Record| C[Voice Input]
     C -->|Transcribe| D[AI Assistant]
     D -->|Chat| E[Refine Details]
-    E -->|Generate| F[ABC Form]
+    E -->|Auto-extract| F[ABC Form]
     F -->|Review| G[Sign Form]
-    G -->|Submit| H[Save & Email]
+    G -->|Submit| H[Save & Optional Share]
 ```
 
 ## Data Flow - Incident Recording Process
@@ -79,91 +79,23 @@ sequenceDiagram
     Note over Teacher,Groq: AI Conversation
     Teacher->>Client: Chat with AI
     Client->>API: Send Message
-    API->>Groq: Process with LLaMA 3.1
+    API->>Groq: Process with LLaMA 3.3 70B
     Groq-->>API: AI Response
     API-->>Client: Display Response
 
-    Note over Teacher,Database: Form Generation
-    Teacher->>Client: Request ABC Form
-    Client->>API: Extract ABC Data
+    Note over Teacher,Database: Automatic ABC Extraction
+    Client->>API: Auto-extract ABC Data
     API->>Groq: Analyze Conversation
     Groq-->>API: Structured ABC Data
-    API-->>Client: Populate Form
+    API-->>Client: Populate Form (Real-time)
 
-    Note over Teacher,Email: Submit and Notify
+    Note over Teacher,Email: Submit and Optional Sharing
     Teacher->>Client: Sign and Submit
     Client->>API: Save Incident
     API->>Database: Store Record
     Database-->>API: Confirmed
-    API->>Email: Notify Parents
-    Email-->>API: Sent
     API-->>Client: Success
-```
-
-## Database Schema
-
-```mermaid
-erDiagram
-    USERS ||--o{ STUDENTS : creates
-    USERS ||--o{ INCIDENTS : records
-    STUDENTS ||--o{ INCIDENTS : has
-    STUDENTS ||--o{ PARENT_STUDENTS : linked_to
-    PARENTS ||--o{ PARENT_STUDENTS : has
-    INCIDENTS ||--o{ EDIT_HISTORY : tracks
-
-    USERS {
-        uuid id PK
-        string email UK
-        string password
-        string firstName
-        string lastName
-        string role
-        string googleId UK
-        timestamp createdAt
-    }
-
-    STUDENTS {
-        int id PK
-        uuid userId FK
-        string name
-        string grade
-        timestamp createdAt
-    }
-
-    INCIDENTS {
-        int id PK
-        uuid userId FK
-        int studentId FK
-        string date
-        string time
-        text antecedent
-        text behavior
-        text consequence
-        string incidentType
-        string status
-        timestamp createdAt
-    }
-
-    PARENTS {
-        int id PK
-        string email
-        string firstName
-        string lastName
-        timestamp createdAt
-    }
-
-    PARENT_STUDENTS {
-        int id PK
-        int parentId FK
-        int studentId FK
-    }
-
-    EDIT_HISTORY {
-        int id PK
-        int incidentId FK
-        jsonb changes
-        timestamp editedAt
-    }
+    Note right of Email: Parent notifications are manual via share endpoint
 ```
 
 ## Technology Stack
@@ -192,7 +124,7 @@ erDiagram
 ### AI Services
 - Groq Cloud
   - Whisper Large v3 (speech-to-text)
-  - LLaMA 3.1 70B (chat & ABC extraction)
+  - LLaMA 3.3 70B Versatile (chat & ABC extraction)
 
 ### Authentication
 - Local (email/password with bcrypt)
@@ -242,28 +174,9 @@ graph LR
         T5[Chat with AI]
     end
     
-```
-
-## Deployment Architecture
-
-```mermaid
-graph TB
-    Users[Users] --> LB[Load Balancer]
-    
-    LB --> App1[App Server 1]
-    LB --> App2[App Server 2]
-    
-    App1 --> DB[PostgreSQL Primary]
-    App2 --> DB
-    
-    DB --> DBR[PostgreSQL Replica]
-    
-    App1 --> Groq[Groq API]
-    App2 --> Groq
-    
-    App1 --> Gmail[Gmail SMTP]
-    App2 --> Gmail
-    
-    App1 --> OAuth[Google OAuth]
-    App2 --> OAuth
+    subgraph Parent
+        P1[View My Children]
+        P2[View Their Incidents]
+        P3[Receive Email Alerts]
+    end
 ```
