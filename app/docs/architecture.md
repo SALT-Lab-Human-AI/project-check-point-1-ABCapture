@@ -6,12 +6,12 @@
 graph TB
     subgraph Client["CLIENT LAYER - React + TypeScript"]
         UI[User Interface]
-        Pages[Pages: Login, Teacher, Admin, Parent]
+        Pages[Page Type: Login, Teacher Interface, Admin Interface]
         Components[Components: Forms, Charts, Voice Input]
         State[State Management: TanStack Query]
     end
 
-    subgraph Server["SERVER LAYER - Express + Node.js"]
+    subgraph Server["SERVER LAYER<br/>Express + Node.js"]
         API[REST API]
         Auth[Authentication]
         Storage[Storage Layer]
@@ -137,7 +137,7 @@ sequenceDiagram
 - Authentication (login, signup, OAuth)
 - Navigation (sidebar, routing)
 - Forms (student, incident, ABC)
-- Dashboards (teacher, admin, parent)
+- Dashboards (teacher, admin)
 - Voice Input (audio recording)
 - Chat Interface (AI assistant)
 
@@ -149,10 +149,9 @@ sequenceDiagram
 - PII Redaction (privacy protection)
 
 ### Data Layer
-- Users (teachers, admins, parents)
+- Users (teachers, admins - authenticated users only)
 - Students (student records)
 - Incidents (behavioral records)
-- Parents (parent information)
 - Edit History (audit trail)
 
 ## Role-Based Access Control
@@ -161,9 +160,11 @@ sequenceDiagram
 graph LR
     subgraph Administrator
         A1[View All Teachers]
-        A2[View All Students]
-        A3[View All Incidents]
-        A4[System Settings]
+        A2[Manage Teachers: Add/Delete]
+        A3[View All Students]
+        A4[View All Incidents]
+        A5[Dashboard Analytics]
+        A6[Account Settings]
     end
     
     subgraph Teacher
@@ -172,11 +173,8 @@ graph LR
         T3[View My Incidents]
         T4[Dashboard Analytics]
         T5[Chat with AI]
-    end
-    
-    subgraph Parent
-        P1[View My Children]
-        P2[View Their Incidents]
-        P3[Receive Email Alerts]
+        T6[Share Incidents via Email]
     end
 ```
+
+
