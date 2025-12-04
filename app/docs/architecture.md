@@ -4,14 +4,14 @@
 
 ```mermaid
 graph TB
-    subgraph Client["CLIENT LAYER - React + TypeScript"]
+    subgraph Client["CLIENT: React + TypeScript"]
         UI[User Interface]
         Pages[Page Type: Login, Teacher Interface, Admin Interface]
         Components[Components: Forms, Charts, Voice Input]
         State[State Management: TanStack Query]
     end
 
-    subgraph Server["SERVER LAYER<br/>Express + Node.js"]
+    subgraph Server["SERVER: Express + Node.js"]
         API[REST API]
         Auth[Authentication]
         Storage[Storage Layer]
