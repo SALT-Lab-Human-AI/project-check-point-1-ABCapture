@@ -263,27 +263,27 @@ Finally, two unique but powerful recommendations were provided by two individual
 The usability evaluation indicates that ABCapture is a promising tool for simplifying incident documentation, extracting ABC data, and supporting teachers in managing behavioral information. Participants found the system intuitive, visually consistent, and easy to navigate – even for those with limited experience in autism-related reporting. However, several design, technical, and conceptual considerations remain.
 
 
-## Task Performance and Workflow Usability
+### Task Performance and Workflow Usability
 
 High success rates in Task 1 and positive difficulty ratings suggest that core workflows (e.g., creating a student) are highly learnable and require minimal cognitive effort, aligning with the goal of keeping administrative tasks fast for busy educators. More complex workflows – such as reviewing drafts or emailing reports – showed greater variability. Some failures were user-driven (e.g., entering a non-functional email), but others point to opportunities for clearer hierarchy, labeling, and action visibility. Confusion around the draft-review process in particular suggests a need for stronger affordances and signposting.
 
 
-## System Performance Issues and Testing Limitations
+### System Performance Issues and Testing Limitations
 
 Several Task 2 errors stemmed from external API rate limits (Groq) rather than failures within ABCapture itself. To avoid these distortions, we conducted supplemental local testing, though the issue underscores the need for future caching, queuing, or alternative inference pipelines to prevent interruptions during real use. Inconsistencies in how the chatbot handled missing details also indicate the need for prompt refinements to ensure predictable LLM behavior and reduce teacher burden.
 
 
-## Balancing Automation With Accuracy
+### Balancing Automation With Accuracy
 
 Participants appreciated the automatic extraction of ABC components, reinforcing the value of LLM-supported documentation. However, concerns such as timestamp errors and acceptance of unrealistic values (e.g., grade level 200) highlight the importance of stronger validation, error handling, and time parsing. Additionally, confusion around the microphone icon indicates a need for clearer differentiation between text entry and speech-to-text – potentially through labeling or more recognizable iconography.
 
 
-## Why Behavioral Recommendations Were Excluded
+### Why Behavioral Recommendations Were Excluded
 
 One participant suggested adding recommended next steps after an incident. We intentionally excluded such features because meaningful behavioral guidance for autistic students requires individualized knowledge of the child’s history, goals, triggers, and supports – information an LLM cannot responsibly infer. Automated advice risks oversimplification, inappropriate strategies, and liability concerns. ABCapture focuses on accurate documentation while leaving intervention decisions to qualified professionals.
 
 
-## User Suggestions and Future Feature Considerations
+### User Suggestions and Future Feature Considerations
 
 Participants suggested reorganizing tab hierarchy, grouping incident history by status or function, and incorporating a tutorial – reflecting a desire for faster onboarding and more efficient navigation. The question about logging incidents involving multiple students suggests a potential future feature, pending careful attention to privacy and data relationships. We also must address security concerns around teacher signatures, likely through 2FA, signature verification, and session timeouts.
 
