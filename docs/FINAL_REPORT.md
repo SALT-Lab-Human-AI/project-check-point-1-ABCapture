@@ -52,7 +52,48 @@ ABCapture is implemented as a three-tier full-stack web application consisting o
 
 The client layer is built with React 18 and TypeScript, using Vite as the build tool and Tailwind CSS with shadcn/ui for styling. Wouter is used for client-side routing, and TanStack Query manages asynchronous server state. All client interactions communicate with the backend through RESTful API calls.
 
-![Diagram](images/architecture.png)
+```mermaid
+graph TB
+    subgraph Client["CLIENT: React + TypeScript"]
+        UI[User Interface]
+        Pages[Page Type: Login, Teacher Interface, Admin Interface]
+        Components[Components: Forms, Charts, Voice Input]
+        State[State Management: TanStack Query]
+    end
+
+    subgraph Server["SERVER: Express + Node.js"]
+        API[REST API]
+        Auth[Authentication]
+        Storage[Storage Layer]
+        Email[Email Service]
+    end
+
+    subgraph External["EXTERNAL SERVICES"]
+        Groq[Groq AI: Whisper + LLaMA 3.3 70B]
+        OAuth[Google OAuth 2.0]
+        SMTP[Email SMTP]
+    end
+
+    subgraph DB["DATABASE - PostgreSQL"]
+        Tables[Tables: Users, Students, Incidents, Parents]
+    end
+
+    UI --> Pages
+    Pages --> Components
+    Components --> State
+    State --> API
+    
+    API --> Auth
+    API --> Storage
+    API --> Email
+    
+    Storage --> Tables
+    
+    API --> Groq
+    API --> OAuth
+    Email --> SMTP
+```
+
 
 The server layer is implemented using Node.js with Express.js and written in TypeScript. It exposes REST endpoints under /api/* and is responsible for:
 
