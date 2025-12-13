@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABCapture</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- AI Agent Header -->
+        <header class="ai-header">
+            <div class="ai-avatar">🤖</div>
+            <div class="ai-info">
+                <h1>ABCapture: AI Incident Reporting Assistant</h1>
+                <p class="ai-tagline">Streamlined ABC Data Collection for Incident Reporting</p>
+            </div>
+            <div class="security-badges">
+                <span class="badge">🔒 FERPA Compliant</span>
+                <span class="badge">🛡️ Encrypted</span>
+            </div>
+        </header>
+
+        <!-- Welcome & Information Request Screen -->
+        <section id="welcome-screen" class="screen active">
+            <div class="ai-conversation">
+                <div class="ai-message">
+                    <div class="ai-bubble">
+                        <p class="ai-greeting">Hi! I'm here to help you quickly document a behavioral incident using the ABC Data method. This will only take a few minutes.</p>
+                    </div>
+                </div>
+
+                <div class="ai-message">
+                    <div class="ai-bubble info-request">
+                        <p><strong>I need the following information - you can tell me everything at once, either by typing or speaking:</strong></p>
+                        <ul class="required-info">
+                            <li>• <strong>Student/Child Name</strong></li>
+                            <li>• <strong>Your Name and Role</strong></li>
+                            <li>• <strong>Date and Time:</strong> (if different from now)</li>
+                            <li>• <strong>Location:</strong> Where did the incident occur?</li>
+                            <li>• <strong>ANTECEDENT:</strong> What happened right before the behavior? What was the child doing/participating in?</li>
+                            <li>• <strong>BEHAVIOR:</strong> Describe exactly what the child did</li>
+                            <li>• <strong>CONSEQUENCE:</strong> What happened immediately after?</li>
+                            <li>• <strong>Duration:</strong> How long did the incident last?</li>
+                            <li>• 
+                                <strong>Behavior Hypothesis:</strong> In your opinion, what do you hypothesize the function of the behavior to be?
+                                <ul>
+                                    <li><strong>Select One:</strong> Get/Obtain or Escape/Avoid</li>
+                                    <li><strong>Select One:</strong> Tasks/Demands, Activities, Attention, Settings, People, Objects, or Sensory Stimuli</li>
+                                </ul>
+                            </li>
+                            <li>• Any additional relevant details?</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-section">
+                <div class="input-container">
+                    <label class="input-label">Tell me about the incident by providing all the required information listed above:</label>
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="incident-input" 
+                            class="incident-textarea" 
+                            placeholder="Example: This is for Jamie in my 3rd grade classroom. I'm Sarah Martinez, special education teacher. It happened today around 2:15 PM in classroom 3B. Right before the behavior, I asked the class to transition from art time to math, and Jamie was really engaged with his drawing. When I said it was time to clean up, Jamie immediately pushed his art supplies off the table, stood up quickly, and said 'No, I'm not done!' loudly. I responded by staying calm, acknowledged his feelings, and offered him two choices. The whole incident lasted about 4 minutes..."
+                            rows="8"></textarea>
+                        <div class="character-counter">
+                            <span id="char-count">0</span> characters
+                        </div>
+                    </div>
+                    
+                    <div class="input-controls">
+                        <button class="btn btn--voice" id="voice-input-btn">
+                            🎤 Voice Input
+                        </button>
+                        <button class="btn btn--outline" id="clear-input-btn">
+                            Clear & Start Over
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn btn--primary btn--lg process-btn" id="process-report-btn">
+                    🤖 Process My Report
+                </button>
+            </div>
+        </section>
+
+        <!-- AI Processing Screen -->
+        <section id="processing-screen" class="screen">
+            <div class="processing-content">
+                <div class="ai-message">
+                    <div class="ai-bubble">
+                        <p>Got it! Let me organize this information into the proper incident report format...</p>
+                    </div>
+                </div>
+
+                <div class="processing-animation">
+                    <div class="ai-brain">🧠</div>
+                    <div class="processing-text">
+                        <div class="processing-step active" data-step="1">
+                            <span class="step-icon">📝</span>
+                            <span class="step-text">Analyzing your input...</span>
+                        </div>
+                        <div class="processing-step" data-step="2">
+                            <span class="step-icon">🔍</span>
+                            <span class="step-text">Identifying ABC Data components...</span>
+                        </div>
+                        <div class="processing-step" data-step="3">
+                            <span class="step-icon">🏗️</span>
+                            <span class="step-text">Organizing incident report...</span>
+                        </div>
+                        <div class="processing-step" data-step="4">
+                            <span class="step-icon">✨</span>
+                            <span class="step-text">Finalizing professional summary...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="processing-progress">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="processing-progress"></div>
+                    </div>
+                    <p class="processing-status">Processing your report...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Organized Review Screen -->
+        <section id="review-screen" class="screen">
+            <div class="ai-conversation">
+                <div class="ai-message">
+                    <div class="ai-bubble">
+                        <p><strong>Here's how I've organized your incident report:</strong></p>
+                        <p>Please review to make sure everything looks accurate:</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="organized-report" id="organized-report">
+                <!-- Will be populated by JavaScript -->
+            </div>
+
+            <div class="review-actions">
+                <div class="accuracy-check">
+                    <p class="ai-question">Does this look accurate?</p>
+                    <div class="action-buttons">
+                        <button class="btn btn--outline" id="edit-report-btn">
+                            ✏️ Edit Information
+                        </button>
+                        <button class="btn btn--primary" id="confirm-report-btn">
+                            ✅ Yes, This is Correct
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final Save Screen -->
+        <section id="save-screen" class="screen">
+            <div class="ai-conversation">
+                <div class="ai-message">
+                    <div class="ai-bubble">
+                        <p>Perfect! Saving your report securely to Box with proper encryption and tagging...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="save-progress">
+                <div class="save-animation">
+                    <div class="box-icon">📦</div>
+                    <div class="encryption-visual">
+                        <div class="lock-icon">🔒</div>
+                        <div class="encryption-bars">
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                        </div>
+                    </div>
+                </div>
+                <p class="save-status">Encrypting and storing securely...</p>
+            </div>
+
+            <div class="save-complete hidden" id="save-complete">
+                <div class="ai-message">
+                    <div class="ai-bubble success">
+                        <p><strong>Report saved successfully!</strong></p>
+                        <p>Your incident ID is <span class="incident-id" id="generated-id"></span>.</p>
+                        <p>All files are encrypted and tagged for easy retrieval.</p>
+                    </div>
+                </div>
+
+                <div class="save-details card">
+                    <div class="card__header">
+                        <h4>📁 Files Saved to Box</h4>
+                    </div>
+                    <div class="card__body" id="file-details">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="next-steps">
+                    <button class="btn btn--primary" id="new-report-btn">
+                        📝 Start New Report
+                    </button>
+                    <button class="btn btn--outline" id="view-reports-btn">
+                        📋 View All Reports
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Voice Recording Modal -->
+        <div id="voice-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>🎤 Voice Input - Tell Me Everything</h3>
+                
+                <div class="voice-recording">
+                    <div class="voice-visual">
+                        <div class="waveform">
+                            <div class="wave"></div>
+                            <div class="wave"></div>
+                            <div class="wave"></div>
+                            <div class="wave"></div>
+                            <div class="wave"></div>
+                        </div>
+                    </div>
+                    
+                    <p class="voice-instructions">
+                        Speak all the incident details at once. Include student name, your name and role, date/time, location, 
+                        what happened before (antecedent), the behavior itself, and what happened after (consequence).
+                    </p>
+                    
+                    <div class="recording-status" id="recording-status">
+                        <span class="status-indicator recording">🔴</span>
+                        <span class="status-text">Recording... Click "Stop" when finished</span>
+                    </div>
+                    
+                    <div class="voice-controls">
+                        <button class="btn btn--primary" id="stop-recording-btn">Stop Recording</button>
+                        <button class="btn btn--outline" id="cancel-recording-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Reports Quick Access (Optional) -->
+        <div class="quick-access hidden" id="quick-access">
+            <h3>Recent Reports</h3>
+            <div class="recent-reports" id="recent-reports">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

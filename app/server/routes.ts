@@ -1,0 +1,1259 @@
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { db } from "./db";
+import { sendIncidentEmail, sendPasswordResetEmail, sendVerificationEmail, createTransporter } from "./email";
+import crypto from "crypto";
+import bcrypt from "bcrypt";
+import { users, students, incidents, incidentEditHistory, parents, parentStudents, type User, type InsertUser, type UpdateUser, type Student, type InsertStudent, type Incident, type InsertIncident, type InsertIncidentEditHistory } from "@shared/schema";
+import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { insertStudentSchema, updateStudentSchema, insertIncidentSchema, updateIncidentSchema, insertUserSchema, loginSchema } from "@shared/schema";
+import { sendChatMessage, extractABCData, transcribeAudio, type ChatMessage } from "./groq";
+import { redactStudentNames } from "./utils/pii-redaction";
+import passport from "./passport";
+import multer from "multer";
+
+// Session middleware
+function setupSession(app: Express) {
+  console.log("Setting up session middleware...");
+  console.log("DATABASE_URL exists:", !!process.env.DATABASE_URL);
+  console.log("SESSION_SECRET exists:", !!process.env.SESSION_SECRET);
+  
+  const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  const pgStore = connectPg(session);
+  const sessionStore = new pgStore({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true, // Allow creating the sessions table if it doesn't exist
+    ttl: sessionTtl,
+    tableName: "sessions",
+  });
+
+  app.set("trust proxy", 1);
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET!,
+      store: sessionStore,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: app.get("env") !== "development",
+        sameSite: "lax",
+        maxAge: sessionTtl,
+      },
+    })
+  );
+  
+  console.log("Session middleware setup complete");
+}
+
+// Auth middleware to protect routes
+export const isAuthenticated = (req: Request, res: Response, next: Function) => {
+  console.log("Auth check - session exists:", !!req.session);
+  console.log("Auth check - userId:", (req.session as any)?.userId);
+  
+  if (req.session && (req.session as any).userId) {
+    return next();
+  }
+  return res.status(401).json({ message: "Unauthorized" });
+};
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  console.log("🚀 Registering routes...");
+  
+  // Setup session FIRST before any routes
+  setupSession(app);
+  
+  // Initialize Passport AFTER session setup
+  app.use(passport.initialize());
+  app.use(passport.session());
+  
+  // Add middleware to log session status on all requests
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path} - Session exists: ${!!req.session}, SessionID: ${req.session?.id}`);
+    next();
+  });
+
+  // Students
+  app.get("/api/students", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      console.log("Fetching students for user:", userId);
+      
+      const rows = await storage.listStudents(userId);
+      console.log("Found students:", rows.length);
+      
+      res.json(rows);
+    } catch (err: any) {
+      console.error("Error fetching students:", err);
+      res.status(500).json({ message: "Failed to fetch students" });
+    }
+  });
+
+  app.post("/api/students", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      
+      if (!userId) {
+        console.error("UserId not found in session");
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
+      console.log("Creating student for user:", userId, "with data:", req.body);
+      
+      const { parentFirstName, parentLastName, parentEmail, ...studentData } = req.body;
+      
+      // Validate that all required parent fields are provided
+      if (!parentFirstName || !parentLastName || !parentEmail) {
+        return res.status(400).json({ 
+          message: "Parent first name, last name, and email are required" 
+        });
+      }
+      
+      // Validate the student data (should NOT include userId)
+      const data = insertStudentSchema.parse(studentData);
+      console.log("Validated student data:", data);
+      console.log("Student data includes notes:", data.notes);
+      
+      // Create student with userId from session
+      const student = await storage.createStudent(userId, data);
+      console.log("Created student successfully:", student);
+      console.log("Returned student has notes:", student.notes);
+      
+      // Create parent (now required)
+      console.log("Creating parent for student:", student.id);
+      const parent = await storage.createParent({
+        firstName: parentFirstName,
+        lastName: parentLastName,
+        email: parentEmail,
+      });
+      
+      // Link parent to student
+      await storage.linkParentToStudent(parent.id, student.id);
+      console.log("Linked parent to student successfully");
+      
+      res.status(201).json(student);
+    } catch (err: any) {
+      console.error("Error creating student:", err);
+      
+      // Better error messages for validation errors
+      if (err.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Invalid student data", 
+          errors: err.errors 
+        });
+      }
+      
+      res.status(400).json({ message: err.message || "Invalid student data" });
+    }
+  });
+
+  app.get("/api/students/:id", isAuthenticated, async (req, res) => {
+    const userId = (req.session as any).userId as string;
+    const id = Number(req.params.id);
+    
+    // Check if user is admin
+    const user = await storage.getUser(userId);
+    let row;
+    
+    if (user?.role === "administrator") {
+      // Admin can view any student
+      row = await storage.getStudentForAdmin(id);
+    } else {
+      // Teachers can only view their own students
+      row = await storage.getStudent(id, userId);
+    }
+    
+    if (!row) return res.status(404).json({ message: "Not found" });
+    console.log("GET /api/students/:id - returning student data:", row);
+    console.log("GET /api/students/:id - student has notes:", row.notes);
+    res.json(row);
+  });
+
+  app.patch("/api/students/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      const id = Number(req.params.id);
+      const data = updateStudentSchema.parse(req.body);
+      const row = await storage.updateStudent(id, userId, data);
+      if (!row) return res.status(404).json({ message: "Not found" });
+      res.json(row);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Invalid student data" });
+    }
+  });
+
+  app.delete("/api/students/:id", isAuthenticated, async (req, res) => {
+    const userId = (req.session as any).userId as string;
+    const id = Number(req.params.id);
+    const ok = await storage.deleteStudent(id, userId);
+    res.json({ success: ok });
+  });
+
+  // Share incident with guardians via email
+  app.post("/api/incidents/:id/share", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      const incidentId = Number(req.params.id);
+      const { parentEmails } = req.body;
+
+      if (!parentEmails || !Array.isArray(parentEmails) || parentEmails.length === 0) {
+        return res.status(400).json({ message: "No guardian emails provided" });
+      }
+
+      // Fetch the incident (with userId to verify ownership)
+      const incident = await storage.getIncident(incidentId, userId);
+      if (!incident) {
+        return res.status(404).json({ message: "Incident not found" });
+      }
+
+      // Fetch student info
+      const student = await storage.getStudent(incident.studentId, userId);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      // Get teacher's email from session
+      const teacher = await storage.getUser(userId);
+      const teacherEmail = teacher?.email;
+
+      // Send email to guardians (with teacher's email as Reply-To)
+      const emailResult = await sendIncidentEmail(parentEmails, incident, student, teacherEmail);
+
+      if (!emailResult.success) {
+        return res.status(500).json({ message: emailResult.message });
+      }
+
+      res.json({ 
+        message: emailResult.message,
+        recipients: parentEmails.length
+      });
+    } catch (error: any) {
+      console.error("Error sharing incident:", error);
+      res.status(500).json({ message: "Failed to share incident" });
+    }
+  });
+
+  // Get parents for a specific student
+  app.get("/api/students/:id/parents", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      const studentId = Number(req.params.id);
+      
+      // Verify student belongs to this user
+      const student = await storage.getStudent(studentId, userId);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      
+      // Fetch parents for this student
+      const result = await db.select({
+        id: parents.id,
+        email: parents.email,
+        firstName: parents.firstName,
+        lastName: parents.lastName,
+      })
+      .from(parents)
+      .innerJoin(parentStudents, eq(parents.id, parentStudents.parentId))
+      .where(eq(parentStudents.studentId, studentId));
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error fetching parents:", error);
+      res.status(500).json({ message: "Failed to fetch parents" });
+    }
+  });
+
+  // Incidents
+  app.get("/api/incidents", isAuthenticated, async (req, res) => {
+    const userId = (req.session as any).userId as string;
+    const studentId = req.query.studentId ? Number(req.query.studentId) : undefined;
+    const status = req.query.status as string; // Add status filter
+    
+    // Check if user is admin
+    const user = await storage.getUser(userId);
+    let rows;
+    
+    if (user?.role === "administrator" && studentId) {
+      // Admin can view incidents for any student
+      rows = await storage.listIncidentsForStudent(studentId, status);
+    } else {
+      // Teachers can only view their own incidents
+      rows = await storage.listIncidents(userId, studentId, status);
+    }
+    
+    res.json(rows);
+  });
+
+  app.post("/api/incidents", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      const data = insertIncidentSchema.parse(req.body);
+      const row = await storage.createIncident(userId, data);
+      res.json(row);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Invalid incident data" });
+    }
+  });
+
+  app.get("/api/incidents/:id", isAuthenticated, async (req, res) => {
+    const userId = (req.session as any).userId as string;
+    const id = Number(req.params.id);
+    
+    // Check if user is admin
+    const user = await storage.getUser(userId);
+    let row;
+    
+    if (user?.role === "administrator") {
+      // Admin can view any incident
+      row = await storage.getIncidentForAdmin(id);
+    } else {
+      // Teachers can only view their own incidents
+      row = await storage.getIncident(id, userId);
+    }
+    
+    if (!row) return res.status(404).json({ message: "Not found" });
+    res.json(row);
+  });
+
+  app.patch("/api/incidents/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      const id = Number(req.params.id);
+      console.log("[PATCH Incident] ID:", id, "User:", userId, "Body:", req.body);
+      const data = updateIncidentSchema.parse(req.body);
+      console.log("[PATCH Incident] Parsed data:", data);
+      
+      // Get user info for edit history
+      const user = await storage.getUser(userId);
+      const editedByName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : undefined;
+      
+      const row = await storage.updateIncident(id, userId, data, editedByName);
+      if (!row) {
+        console.log("[PATCH Incident] Not found");
+        return res.status(404).json({ message: "Not found" });
+      }
+      console.log("[PATCH Incident] Success:", row);
+      res.json(row);
+    } catch (err: any) {
+      console.error("[PATCH Incident] Error:", err);
+      res.status(400).json({ message: err.message || "Invalid incident data" });
+    }
+  });
+
+  app.get("/api/incidents/:id/history", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      const id = Number(req.params.id);
+      
+      // Check if user is admin
+      const user = await storage.getUser(userId);
+      let history;
+      
+      if (user?.role === "administrator") {
+        // Admin can view edit history for any incident
+        history = await storage.getIncidentEditHistoryForAdmin(id);
+      } else {
+        // Teachers can only view edit history for their own incidents
+        history = await storage.getIncidentEditHistory(id, userId);
+      }
+      
+      res.json(history);
+    } catch (err: any) {
+      console.error("[GET Incident History] Error:", err);
+      res.status(400).json({ message: err.message || "Failed to fetch edit history" });
+    }
+  });
+
+  app.delete("/api/incidents/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId as string;
+      const id = Number(req.params.id);
+      console.log("[DELETE Incident] Request received - ID:", id, "User:", userId, "Method:", req.method, "Path:", req.path);
+      
+      if (!userId) {
+        console.error("[DELETE Incident] No userId in session");
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (isNaN(id)) {
+        console.error("[DELETE Incident] Invalid ID:", req.params.id);
+        return res.status(400).json({ message: "Invalid incident ID" });
+      }
+      
+      // Check if incident exists and belongs to user
+      const incident = await storage.getIncident(id, userId);
+      if (!incident) {
+        console.log("[DELETE Incident] Incident not found:", id);
+        return res.status(404).json({ message: "Incident not found" });
+      }
+      
+      // Only allow deletion of draft incidents
+      if (incident.status !== "draft") {
+        console.log("[DELETE Incident] Cannot delete signed incident:", id);
+        return res.status(400).json({ message: "Only draft incidents can be deleted" });
+      }
+      
+      const deleted = await storage.deleteIncident(id, userId);
+      if (!deleted) {
+        console.error("[DELETE Incident] Delete operation returned false");
+        return res.status(500).json({ message: "Failed to delete incident" });
+      }
+      
+      console.log("[DELETE Incident] Success: Deleted incident", id);
+      res.status(200).json({ message: "Incident deleted successfully" });
+    } catch (err: any) {
+      console.error("[DELETE Incident] Error:", err);
+      res.status(500).json({ message: err.message || "Failed to delete incident" });
+    }
+  });
+
+  // Send verification code to email
+  app.post("/api/auth/send-verification-code", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "An account with this email already exists" });
+      }
+
+      // Generate 6-digit verification code
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiryTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      // Store verification code in session temporarily
+      (req.session as any).verificationCode = verificationCode;
+      (req.session as any).verificationEmail = email;
+      (req.session as any).verificationExpiry = expiryTime;
+
+      // Send verification code via email
+      const transporter = createTransporter();
+      if (transporter) {
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject: 'Your Verification Code - ABCapture',
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; }
+                .content { background-color: #f9fafb; padding: 30px; margin-top: 20px; border-radius: 8px; }
+                .code { font-size: 32px; font-weight: bold; color: #4F46E5; text-align: center; letter-spacing: 5px; padding: 20px; background: white; border-radius: 8px; margin: 20px 0; }
+                .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Email Verification</h1>
+                </div>
+                <div class="content">
+                  <p>Thank you for signing up for ABCapture!</p>
+                  <p>Please use the following verification code to complete your registration:</p>
+                  <div class="code">${verificationCode}</div>
+                  <p><strong>This code will expire in 10 minutes.</strong></p>
+                  <p>If you didn't request this code, you can safely ignore this email.</p>
+                </div>
+                <div class="footer">
+                  <p>This is an automated message from ABCapture Incident Tracking System.</p>
+                  <p>Please do not reply to this email.</p>
+                </div>
+              </div>
+            </body>
+            </html>
+          `,
+        };
+
+        await transporter.sendMail(mailOptions);
+      }
+
+      console.log('[Verification] Code sent to:', email, 'Code:', verificationCode);
+      res.json({ message: "Verification code sent to your email" });
+    } catch (error: any) {
+      console.error('[Verification] Error:', error);
+      res.status(500).json({ message: "Failed to send verification code" });
+    }
+  });
+
+  // Signup route (now requires verification code)
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      console.log("Signup attempt with data:", req.body);
+      console.log("Session before signup:", !!req.session);
+      
+      const { verificationCode, ...validatedData } = insertUserSchema.extend({ verificationCode: z.string() }).parse(req.body);
+      
+      // Verify the code matches and hasn't expired
+      const sessionCode = (req.session as any).verificationCode;
+      const sessionEmail = (req.session as any).verificationEmail;
+      const sessionExpiry = (req.session as any).verificationExpiry;
+
+      if (!sessionCode || !sessionEmail) {
+        return res.status(400).json({ message: "Please request a verification code first" });
+      }
+
+      if (validatedData.email !== sessionEmail) {
+        return res.status(400).json({ message: "Email does not match the verification request" });
+      }
+
+      if (new Date() > new Date(sessionExpiry)) {
+        return res.status(400).json({ message: "Verification code has expired. Please request a new one" });
+      }
+
+      if (verificationCode !== sessionCode) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      // Clear verification data from session
+      delete (req.session as any).verificationCode;
+      delete (req.session as any).verificationEmail;
+      delete (req.session as any).verificationExpiry;
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+
+      // Create new user (email already verified via code)
+      const user = await storage.createUser({
+        ...validatedData,
+        emailVerified: 'true', // Already verified via code
+      });
+      console.log("User created:", user.id);
+      
+      // Defensive check for session
+      if (!req.session) {
+        console.error("Session is undefined during signup - session middleware may not be working");
+        return res.status(500).json({ message: "Session initialization failed" });
+      }
+      
+      // Set session with additional error handling
+      try {
+        (req.session as any).userId = user.id;
+        console.log("Session userId set to:", user.id);
+        
+        // Force session save to ensure it's persisted
+        await new Promise<void>((resolve, reject) => {
+          req.session.save((err) => {
+            if (err) {
+              console.error("Session save error:", err);
+              reject(err);
+            } else {
+              console.log("Session saved successfully");
+              resolve();
+            }
+          });
+        });
+      } catch (sessionError) {
+        console.error("Error setting session:", sessionError);
+        return res.status(500).json({ message: "Failed to create session" });
+      }
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      res.status(400).json({ message: error.message || "Signup failed" });
+    }
+  });
+
+  // Login route
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      console.log("[Login] Request body:", JSON.stringify(req.body));
+      
+      // Better Zod error handling
+      const parsed = loginSchema.safeParse(req.body);
+      if (!parsed.success) {
+        console.error("[Login] Validation error:", parsed.error.errors);
+        return res.status(400).json({ 
+          message: "Invalid email or password format",
+          errors: parsed.error.errors 
+        });
+      }
+      
+      const { email, password } = parsed.data;
+      console.log("[Login] Attempting login for:", email);
+      
+      const user = await storage.authenticateUser(email, password);
+      
+      if (!user) {
+        console.log("[Login] Authentication failed for:", email);
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Defensive check for session
+      if (!req.session) {
+        console.error("[Login] Session is undefined during login");
+        return res.status(500).json({ message: "Session initialization failed" });
+      }
+
+      // Set session
+      (req.session as any).userId = user.id;
+      console.log("[Login] Success for:", email, "userId:", user.id);
+      
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("[Login] Error:", error);
+      res.status(400).json({ message: error.message || "Login failed" });
+    }
+  });
+
+  // Logout route
+  app.post("/api/auth/logout", (req, res) => {
+    if (!req.session) {
+      return res.status(400).json({ message: "No session to destroy" });
+    }
+    
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  // Request password reset
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Find user by email
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      
+      // Always return success to prevent email enumeration
+      if (!user) {
+        return res.json({ message: "If an account exists with this email, a password reset link has been sent." });
+      }
+
+      // Don't allow password reset for OAuth users
+      if (user.provider !== 'local' || !user.password) {
+        return res.json({ message: "If an account exists with this email, a password reset link has been sent." });
+      }
+
+      // Generate reset token (random string)
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+      // Save token to database
+      await db.update(users)
+        .set({ 
+          resetToken,
+          resetTokenExpiry 
+        })
+        .where(eq(users.id, user.id));
+
+      // Send email
+      const emailResult = await sendPasswordResetEmail(email, resetToken, user.firstName || undefined);
+      
+      if (!emailResult.success) {
+        console.error('[Password Reset] Email send failed:', emailResult.message);
+        return res.status(500).json({ message: "Failed to send reset email. Please try again later." });
+      }
+
+      res.json({ message: "If an account exists with this email, a password reset link has been sent." });
+    } catch (error: any) {
+      console.error("[Password Reset Request] Error:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
+
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      // Find user by reset token
+      const [user] = await db.select()
+        .from(users)
+        .where(eq(users.resetToken, token));
+      
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      // Check if token is expired
+      if (!user.resetTokenExpiry || new Date() > user.resetTokenExpiry) {
+        return res.status(400).json({ message: "Reset token has expired. Please request a new one." });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password and clear reset token
+      await db.update(users)
+        .set({ 
+          password: hashedPassword,
+          resetToken: null,
+          resetTokenExpiry: null 
+        })
+        .where(eq(users.id, user.id));
+
+      res.json({ message: "Password reset successful. You can now log in with your new password." });
+    } catch (error: any) {
+      console.error("[Password Reset] Error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
+  // Get current user route
+  app.get("/api/auth/user", isAuthenticated, async (req, res) => {
+    try {
+      console.log('[API] /api/auth/user called');
+      const userId = (req.session as any).userId;
+      console.log('[API] User ID from session:', userId);
+      
+      if (!userId) {
+        console.error('[API] No userId in session');
+        return res.status(401).json({ message: "No user ID in session" });
+      }
+      
+      const user = await storage.getUser(userId);
+      console.log('[API] User fetched from database:', user ? user.id : 'null');
+      
+      if (!user) {
+        console.error('[API] User not found in database for ID:', userId);
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Return user without password (handle null password for OAuth users)
+      const { password, ...userWithoutPassword } = user;
+      console.log('[API] Returning user data (without password)');
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error('[API] Error fetching user:', error);
+      console.error('[API] Error stack:', error.stack);
+      console.error('[API] Error message:', error.message);
+      res.status(500).json({ 
+        message: "Failed to fetch user",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+
+  // Update user profile
+  app.patch("/api/auth/user", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      console.log("[Update User] Request body keys:", Object.keys(req.body));
+      console.log("[Update User] photoUrl length:", req.body.photoUrl?.length);
+      
+      // Manual validation instead of Zod to avoid pattern issues
+      const data: { firstName?: string; lastName?: string; photoUrl?: string; emailNotifications?: string; draftReminders?: string } = {};
+      
+      if (req.body.firstName !== undefined && req.body.firstName !== null) {
+        data.firstName = String(req.body.firstName);
+      }
+      if (req.body.lastName !== undefined && req.body.lastName !== null) {
+        data.lastName = String(req.body.lastName);
+      }
+      if (req.body.photoUrl !== undefined && req.body.photoUrl !== null) {
+        data.photoUrl = String(req.body.photoUrl);
+      }
+      if (req.body.emailNotifications !== undefined && req.body.emailNotifications !== null) {
+        data.emailNotifications = String(req.body.emailNotifications);
+      }
+      if (req.body.draftReminders !== undefined && req.body.draftReminders !== null) {
+        data.draftReminders = String(req.body.draftReminders);
+      }
+      
+      console.log("[Update User] Processed data:", { ...data, photoUrl: data.photoUrl ? `${data.photoUrl.substring(0, 50)}... (${data.photoUrl.length} chars)` : undefined });
+      
+      const updatedUser = await storage.updateUser(userId, data);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Return user without password
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("[Update User] Error:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.split('\n').slice(0, 3),
+      });
+      
+      res.status(400).json({ message: error.message || "Failed to update user" });
+    }
+  });
+
+  // Delete user account
+  app.delete("/api/auth/user", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      
+      const deleted = await storage.deleteUser(userId);
+      
+      if (!deleted) {
+        return res.status(500).json({ message: "Failed to delete account" });
+      }
+
+      // Destroy session after deleting account
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session:", err);
+        }
+      });
+
+      res.json({ message: "Account deleted successfully" });
+    } catch (error: any) {
+      console.error("[Delete User] Error:", error);
+      res.status(400).json({ message: error.message || "Failed to delete account" });
+    }
+  });
+
+  // Google OAuth Routes
+  // Initiates the Google OAuth flow
+  app.get("/auth/google", (req, res, next) => {
+    console.log('[OAuth] Initiating Google OAuth flow');
+    passport.authenticate("google", { 
+      scope: ["profile", "email"],
+      session: true 
+    })(req, res, next);
+  });
+
+  // Google OAuth callback - using custom callback to handle errors properly
+  app.get("/auth/google/callback", (req, res, next) => {
+    console.log('[OAuth] Google callback received');
+    
+    // Use custom callback to prevent automatic response and handle errors
+    passport.authenticate("google", (err: Error | null, user: any, info: any) => {
+      console.log('[OAuth] Passport authenticate callback triggered');
+      console.log('[OAuth] Error:', err);
+      console.log('[OAuth] User:', user ? user.id : 'none');
+      console.log('[OAuth] Info:', info);
+      
+      // Handle authentication errors
+      if (err) {
+        console.error('[OAuth] Authentication error:', err);
+        return res.redirect('/login?error=auth_error');
+      }
+      
+      // Handle authentication failure (user not found/created)
+      if (!user) {
+        console.error('[OAuth] No user returned from authentication');
+        return res.redirect('/login?error=auth_failed');
+      }
+      
+      // Manually establish login session
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error('[OAuth] Login error:', loginErr);
+          return res.redirect('/login?error=login_failed');
+        }
+        
+        console.log('[OAuth] User logged in successfully:', user.id);
+        
+        // Set session userId for compatibility with existing auth system
+        (req.session as any).userId = user.id;
+        
+        // Save session before redirecting to prevent race conditions
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('[OAuth] Session save error:', saveErr);
+            return res.redirect('/login?error=session_failed');
+          }
+          
+          console.log('[OAuth] Session saved successfully, redirecting to home');
+          // Only send ONE response - redirect to home page
+          return res.redirect('/');
+        });
+      });
+    })(req, res, next);
+  });
+
+  // Chatbot routes
+  app.post("/api/chat", isAuthenticated, async (req, res) => {
+    try {
+      const { messages } = req.body as { messages: ChatMessage[] };
+      
+      if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ message: "Invalid messages format" });
+      }
+
+      console.log("Chat request with", messages.length, "messages");
+      
+      const response = await sendChatMessage(messages);
+      res.json({ message: response });
+    } catch (error: any) {
+      console.error("Chat error:", error);
+      res.status(500).json({ message: error.message || "Failed to process chat message" });
+    }
+  });
+
+  app.post("/api/chat/extract-abc", isAuthenticated, async (req, res) => {
+    try {
+      const { messages } = req.body as { messages: ChatMessage[] };
+      
+      if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ message: "Invalid messages format" });
+      }
+
+      console.log("Extracting ABC data from", messages.length, "messages");
+      
+      const abcData = await extractABCData(messages);
+      res.json(abcData);
+    } catch (error: any) {
+      console.error("ABC extraction error:", error);
+      res.status(500).json({ message: error.message || "Failed to extract ABC data" });
+    }
+  });
+
+  // Audio transcription endpoint
+  // Configure multer for in-memory file storage (max 25MB for Groq Whisper)
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 25 * 1024 * 1024, // 25MB max file size
+    },
+    fileFilter: (req: any, file: any, cb: any) => {
+      // Accept audio formats supported by Whisper
+      const allowedMimes = ['audio/webm', 'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/mp4'];
+      if (allowedMimes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid audio format. Supported: webm, mp3, wav, mp4'));
+      }
+    },
+  });
+
+  app.post("/api/chat/transcribe-audio", isAuthenticated, upload.single('audio'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No audio file provided" });
+      }
+
+      const userId = (req.session as any).userId as string;
+      console.log(`[Transcribe Audio] Request from user ${userId}, file: ${req.file.originalname} (${req.file.size} bytes)`);
+
+      // Transcribe audio using Groq Whisper
+      const transcript = await transcribeAudio(req.file.buffer, req.file.originalname);
+      console.log(`[Transcribe Audio] Transcription received (${transcript.length} chars)`);
+
+      // Get user's students for PII redaction
+      const students = await storage.listStudents(userId);
+      const studentNames = students.map(s => s.name);
+      
+      console.log(`[Transcribe Audio] Redacting ${studentNames.length} student names`);
+      
+      // Redact student names from transcript
+      const redactedTranscript = redactStudentNames(transcript, studentNames);
+
+      console.log(`[Transcribe Audio] Returning redacted transcript (${redactedTranscript.length} chars)`);
+      
+      res.json({ transcript: redactedTranscript });
+    } catch (error: any) {
+      console.error("[Transcribe Audio] Error:", error);
+      res.status(500).json({ message: error.message || "Failed to transcribe audio" });
+    }
+  });
+
+  // Admin endpoints
+  const isAdmin = async (req: Request, res: Response, next: Function) => {
+    const userId = (req.session as any)?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const user = await storage.getUser(userId);
+    if (!user || user.role !== "administrator") {
+      return res.status(403).json({ message: "Forbidden: Admin access required" });
+    }
+    
+    next();
+  };
+
+  // ===== TEACHER ROUTES - ORDER MATTERS! =====
+  // POST and DELETE must come BEFORE GET routes with :id parameter
+  
+  // Create a new teacher
+  app.post("/api/admin/teachers", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      console.log("[POST /api/admin/teachers] Request body:", req.body);
+      
+      const { name, email, hireDate } = req.body;
+      
+      // Validate required fields
+      if (!email || !name || !hireDate) {
+        console.log("[POST /api/admin/teachers] Validation failed - missing required fields");
+        return res.status(400).json({ 
+          success: false,
+          message: "Name, email, and hire date are required" 
+        });
+      }
+
+      // Check if user with this email already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        console.log("[POST /api/admin/teachers] User already exists with email:", email);
+        return res.status(409).json({ 
+          success: false,
+          message: "A user with this email already exists" 
+        });
+      }
+
+      // Split name into first and last name (simple split on first space)
+      const nameParts = name.trim().split(/\s+/);
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
+
+      // Create the teacher user
+      const teacher = await storage.createUser({
+        email,
+        firstName,
+        lastName,
+        role: "teacher",
+        photoUrl: null,
+        provider: "local",
+        password: null, // Teacher will need to set password via reset link
+      });
+
+      console.log("[POST /api/admin/teachers] Teacher created successfully:", teacher.id);
+      
+      res.status(201).json({ 
+        success: true,
+        data: teacher 
+      });
+    } catch (error: any) {
+      console.error("[POST /api/admin/teachers] Error creating teacher:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to create teacher" 
+      });
+    }
+  });
+
+  // Delete a teacher - MUST be before GET :id route
+  app.delete("/api/admin/teachers/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      console.log("[DELETE /api/admin/teachers/:id] Teacher ID:", req.params.id);
+      const teacherId = req.params.id;
+      
+      // Check if teacher exists
+      const teacher = await storage.getTeacherById(teacherId);
+      if (!teacher) {
+        console.log("[DELETE /api/admin/teachers/:id] Teacher not found");
+        return res.status(404).json({ 
+          success: false,
+          message: "Teacher not found" 
+        });
+      }
+
+      // Check if teacher has students
+      const students = await storage.getTeacherStudents(teacherId);
+      if (students.length > 0) {
+        console.log("[DELETE /api/admin/teachers/:id] Teacher has students, cannot delete");
+        return res.status(400).json({ 
+          success: false,
+          message: `Cannot delete teacher with ${students.length} assigned student${students.length !== 1 ? 's' : ''}. Please reassign or remove their students first.`,
+          hasStudents: true,
+          studentCount: students.length
+        });
+      }
+
+      // Delete the teacher
+      const success = await storage.deleteUser(teacherId);
+      if (!success) {
+        console.log("[DELETE /api/admin/teachers/:id] Failed to delete from database");
+        return res.status(500).json({ 
+          success: false,
+          message: "Failed to delete teacher" 
+        });
+      }
+
+      console.log("[DELETE /api/admin/teachers/:id] Teacher deleted successfully");
+      res.json({ 
+        success: true,
+        message: "Teacher deleted successfully" 
+      });
+    } catch (error: any) {
+      console.error("[DELETE /api/admin/teachers/:id] Error deleting teacher:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to delete teacher" 
+      });
+    }
+  });
+
+  // Get all teachers with student counts
+  app.get("/api/admin/teachers", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      console.log("[GET /api/admin/teachers] Fetching all teachers");
+      const teachers = await storage.listAllTeachers();
+      res.json(teachers);
+    } catch (error: any) {
+      console.error("[GET /api/admin/teachers] Error fetching teachers:", error);
+      res.status(500).json({ message: "Failed to fetch teachers" });
+    }
+  });
+
+  // Get students for a specific teacher (MUST be before generic :id route)
+  app.get("/api/admin/teachers/:id/students", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      console.log("[GET /api/admin/teachers/:id/students] Teacher ID:", req.params.id);
+      const teacherId = req.params.id;
+      const students = await storage.getTeacherStudents(teacherId);
+      res.json(students);
+    } catch (error: any) {
+      console.error("[GET /api/admin/teachers/:id/students] Error:", error);
+      res.status(500).json({ message: "Failed to fetch teacher students" });
+    }
+  });
+
+  // Get teacher by ID (MUST be after more specific routes)
+  app.get("/api/admin/teachers/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      console.log("[GET /api/admin/teachers/:id] Teacher ID:", req.params.id);
+      const teacherId = req.params.id;
+      const teacher = await storage.getTeacherById(teacherId);
+      
+      if (!teacher) {
+        return res.status(404).json({ message: "Teacher not found" });
+      }
+      
+      res.json(teacher);
+    } catch (error: any) {
+      console.error("[GET /api/admin/teachers/:id] Error:", error);
+      res.status(500).json({ message: "Failed to fetch teacher" });
+    }
+  });
+
+  // Get all incidents across all teachers
+  app.get("/api/admin/incidents", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const incidents = await storage.listAllIncidents();
+      res.json(incidents);
+    } catch (error: any) {
+      console.error("Error fetching all incidents:", error);
+      res.status(500).json({ message: "Failed to fetch incidents" });
+    }
+  });
+
+  // Get dashboard statistics
+  app.get("/api/admin/dashboard/stats", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getDashboardStats();
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  // Get simplified list of teachers for dropdown filters
+  app.get("/api/admin/teachers-list", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const teachers = await storage.listAllTeachers();
+      const simplifiedList = teachers.map(t => ({
+        id: t.id,
+        name: `${t.firstName || ''} ${t.lastName || ''}`.trim() || t.email,
+      }));
+      res.json(simplifiedList);
+    } catch (error: any) {
+      console.error("Error fetching teachers list:", error);
+      res.status(500).json({ message: "Failed to fetch teachers list" });
+    }
+  });
+
+  // Allow admin to view any student's details
+  app.get("/api/admin/students/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const studentId = parseInt(req.params.id);
+      const student = await storage.getStudentForAdmin(studentId);
+      
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      
+      res.json(student);
+    } catch (error: any) {
+      console.error("Error fetching student:", error);
+      res.status(500).json({ message: "Failed to fetch student" });
+    }
+  });
+
+  // Simple test endpoint
+  app.get("/api/test", (req, res) => {
+    console.log("✅ Test endpoint called successfully!");
+    res.json({ message: "Server is working!" });
+  });
+
+  // Temporary migration endpoint to add notes field
+  app.post("/api/run-migration", async (req, res) => {
+    try {
+      console.log("Running migration to add notes field...");
+      
+      // Check if notes column already exists
+      const checkResult = await db.execute(sql`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'students' AND column_name = 'notes'
+      `);
+      
+      if (checkResult.rows.length === 0) {
+        // Add notes column
+        await db.execute(sql`ALTER TABLE students ADD COLUMN notes TEXT`);
+        console.log('✅ Added notes column to students table');
+      } else {
+        console.log('ℹ️  Notes column already exists in students table');
+      }
+      
+      // Check if grade column is nullable
+      const gradeCheckResult = await db.execute(sql`
+        SELECT is_nullable 
+        FROM information_schema.columns 
+        WHERE table_name = 'students' AND column_name = 'grade'
+      `);
+      
+      if (gradeCheckResult.rows[0]?.is_nullable === 'YES') {
+        // Make grade column NOT NULL
+        await db.execute(sql`ALTER TABLE students ALTER COLUMN grade SET NOT NULL`);
+        console.log('✅ Made grade column NOT NULL');
+      } else {
+        console.log('ℹ️  Grade column is already NOT NULL');
+      }
+      
+      res.json({ success: true, message: "Migration completed successfully!" });
+      
+    } catch (error: any) {
+      console.error('❌ Migration failed:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  console.log("✅ All routes registered successfully!");
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
